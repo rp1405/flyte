@@ -1,9 +1,13 @@
 package com.flyte.backend.controller;
 
-import com.flyte.backend.model.User;
+import com.flyte.backend.DTO.User.UserRequest;
+import com.flyte.backend.DTO.User.UserResponse;
 import com.flyte.backend.service.UserService;
+
+import jakarta.validation.Valid;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -17,12 +21,23 @@ public class UserController {
 
     // This endpoint simulates a login/registration event.
     // In a real OAuth flow, this logic would be in a success handler.
-    @PostMapping("/findOrCreate")
-    public User findOrCreateUser(@RequestBody Map<String, String> payload) {
-        String email = payload.get("email");
-        String name = payload.get("name");
-        String profilePictureUrl = payload.get("profilePictureUrl");
+    @PostMapping("/create")
+    public ResponseEntity<UserResponse> findOrCreateUser(@Valid @RequestBody UserRequest userRequest) {
 
-        return userService.findOrCreateUser(email, name, profilePictureUrl);
+        UserResponse response = userService.createUser(userRequest);
+        return ResponseEntity.ok(response);
+
     }
+
+    // Endpoint to get a user by email
+    @GetMapping("/getUser")
+    public ResponseEntity<UserResponse> getUser(@RequestParam String email) {
+        UserResponse response = userService.getUserByEmail(email);
+        if (response != null) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }
