@@ -1,0 +1,42 @@
+package com.flyte.backend.service;
+
+import com.flyte.backend.DTO.User.UserRequest;
+import com.flyte.backend.DTO.User.UserResponse;
+import com.flyte.backend.model.User;
+import com.flyte.backend.repository.UserRepository;
+import com.flyte.backend.util.IdGenerator;
+
+import jakarta.transaction.Transactional;
+
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserService {
+
+    private UserRepository userRepository;
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Transactional
+    public UserResponse createUser(UserRequest userRequest) {
+        User newUser = new User();
+        newUser.setId(IdGenerator.generate());
+        newUser.setName(userRequest.name);
+        newUser.setEmail(userRequest.email);
+        newUser.setProfilePictureUrl(userRequest.profilePictureUrl);
+        newUser.setNickname(userRequest.nickname);
+        newUser.setPhoneNumber(userRequest.phoneNumber);
+
+        User savedUser = userRepository.save(newUser);
+        return new UserResponse(savedUser);
+    }
+
+    public UserResponse getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .map(UserResponse::new)
+                .orElse(null);
+    }
+
+}
