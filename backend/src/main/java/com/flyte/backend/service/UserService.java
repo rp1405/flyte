@@ -4,10 +4,9 @@ import com.flyte.backend.DTO.User.UserRequest;
 import com.flyte.backend.DTO.User.UserResponse;
 import com.flyte.backend.model.User;
 import com.flyte.backend.repository.UserRepository;
-import com.flyte.backend.util.IdGenerator;
 
 import jakarta.transaction.Transactional;
-
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,7 +21,6 @@ public class UserService {
     @Transactional
     public UserResponse createUser(UserRequest userRequest) {
         User newUser = new User();
-        newUser.setId(IdGenerator.generate());
         newUser.setName(userRequest.name);
         newUser.setEmail(userRequest.email);
         newUser.setProfilePictureUrl(userRequest.profilePictureUrl);
@@ -35,6 +33,12 @@ public class UserService {
 
     public UserResponse getUserByEmail(String email) {
         return userRepository.findByEmail(email)
+                .map(UserResponse::new)
+                .orElse(null);
+    }
+
+    public UserResponse getUserById(UUID id) {
+        return userRepository.findById(id)
                 .map(UserResponse::new)
                 .orElse(null);
     }

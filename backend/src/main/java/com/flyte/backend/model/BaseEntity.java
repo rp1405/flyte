@@ -3,7 +3,10 @@ package com.flyte.backend.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.GeneratedValue;
 import java.time.LocalDateTime;
+import java.util.UUID;
+
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -13,8 +16,9 @@ import org.hibernate.annotations.UpdateTimestamp;
 public abstract class BaseEntity {
 
     @Id
-    @Column(length = 6)
-    private String id;
+    @GeneratedValue
+    @Column(length = 36, updatable = false, nullable = false)
+    private UUID id;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
