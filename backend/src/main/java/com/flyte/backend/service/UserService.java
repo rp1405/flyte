@@ -28,6 +28,7 @@ public class UserService {
         newUser.setPhoneNumber(userRequest.phoneNumber);
 
         User savedUser = userRepository.save(newUser);
+        System.out.println("Created user with ID: " + savedUser.getCreatedAt());
         return new UserResponse(savedUser);
     }
 

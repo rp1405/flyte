@@ -1,9 +1,14 @@
 package com.flyte.backend.DTO.User;
 
+import com.flyte.backend.model.BaseEntity;
 import com.flyte.backend.model.User;
 
-public class UserResponse {
-    public final String id;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class UserResponse extends BaseEntity {
     public final String name;
     public final String email;
     public final String profilePictureUrl;
@@ -11,7 +16,9 @@ public class UserResponse {
     public final String phoneNumber;
 
     public UserResponse(User user) {
-        this.id = user.getId() != null ? user.getId().toString() : null;
+        this.setId(user.getId());
+        this.setCreatedAt(user.getCreatedAt());
+        this.setUpdatedAt(user.getUpdatedAt());
         this.name = user.getName();
         this.email = user.getEmail();
         this.profilePictureUrl = user.getProfilePictureUrl();

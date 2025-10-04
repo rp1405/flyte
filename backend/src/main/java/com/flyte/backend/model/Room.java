@@ -25,6 +25,7 @@ public class Room extends BaseEntity {
     @Column(nullable = false)
     private RoomType type;
 
+    @Column(name = "expiry_time")
     private Instant expiryTime;
 
 }
