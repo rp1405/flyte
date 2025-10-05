@@ -11,14 +11,29 @@ import java.time.Instant;
 @Entity
 @Table(name = "journeys")
 public class Journey extends BaseEntity {
-    @Column(nullable = false)
+    @Column
     private String name;
 
-     @Column(name = "depart_time", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Column
+    private String source;
+
+    @Column
+    private String destination;
+
+    @Column(name = "depart_time", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private Instant departTime;
 
     @Column(name = "arrival_time", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private Instant arrivalTime;
+
+    @Column
+    private String destinationSlot;
+
+    @Column
+    private String sourceSlot;
+
+    @Column
+    private String flightNumber;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_journey_user"), referencedColumnName = "id")
