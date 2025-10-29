@@ -2,9 +2,10 @@ package com.flyte.backend.DTO.User;
 
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
 
 
-
+@Data
 public class UserRequest {
 
     @NotBlank(message = "Email is required and cannot be blank.")

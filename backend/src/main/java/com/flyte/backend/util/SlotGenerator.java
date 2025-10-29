@@ -1,7 +1,6 @@
 package com.flyte.backend.util;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+
 
 import lombok.Data;
 
@@ -23,10 +22,12 @@ public class SlotGenerator {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy");
 
     public SlotGenerator(Instant instant, int totalSlots) {
+
         if (totalSlots <= 0 || 24 % totalSlots != 0) {
             throw new IllegalArgumentException(
                     "The number of slots must be a positive integer that divides 24 perfectly (e.g., 1, 2, 3, 4, 6, 8, 12, 24).");
         }
+
         this.totalSlots = totalSlots;
         this.slotDurationInHours = 24 / this.totalSlots;
 

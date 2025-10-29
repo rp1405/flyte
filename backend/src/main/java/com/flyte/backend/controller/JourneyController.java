@@ -5,6 +5,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.flyte.backend.DTO.Journey.CreateJourneyRequest;
 import com.flyte.backend.model.Journey;
 import com.flyte.backend.service.JourneyService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -22,7 +25,7 @@ public class JourneyController {
     }
 
     @PostMapping("/create")
-    public Journey postMethodName(@RequestBody CreateJourneyRequest journeyRequest) {
+    public Journey postMethodName(@Valid @RequestBody CreateJourneyRequest journeyRequest) {
         return journeyService.createJourney(journeyRequest);
     }
 
