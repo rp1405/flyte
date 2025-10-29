@@ -19,16 +19,26 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponse createUser(UserRequest userRequest) {
-        User newUser = new User();
-        newUser.setName(userRequest.name);
-        newUser.setEmail(userRequest.email);
-        newUser.setProfilePictureUrl(userRequest.profilePictureUrl);
-        newUser.setNickname(userRequest.nickname);
-        newUser.setPhoneNumber(userRequest.phoneNumber);
+    public UserResponse findOrCreateUser(UserRequest userRequest) {
 
-        User savedUser = userRepository.save(newUser);
-        return new UserResponse(savedUser);
+    return userRepository.findByEmail(userRequest.email)
+                .map(existingUser -> {
+                    // Update existing user's information if needed
+                    existingUser.setName(userRequest.name);
+                    existingUser.setProfilePictureUrl(userRequest.profilePictureUrl);
+                    existingUser.setNickname(userRequest.nickname);
+                    existingUser.setPhoneNumber(userRequest.phoneNumber);
+                    return new UserResponse(userRepository.save(existingUser));
+                })
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setName(userRequest.name);
+                    newUser.setEmail(userRequest.email);
+                    newUser.setProfilePictureUrl(userRequest.profilePictureUrl);
+                    newUser.setNickname(userRequest.nickname);
+                    newUser.setPhoneNumber(userRequest.phoneNumber);
+                    return new UserResponse(userRepository.save(newUser));
+                });
     }
 
     public UserResponse getUserByEmail(String email) {

@@ -23,10 +23,10 @@ public class UserController {
 
     // This endpoint simulates a login/registration event.
     // In a real OAuth flow, this logic would be in a success handler.
-    @PostMapping("/create")
+    @PostMapping("/findOrCreate")
     public ResponseEntity<UserResponse> findOrCreateUser(@Valid @RequestBody UserRequest userRequest) {
 
-        UserResponse response = userService.createUser(userRequest);
+        UserResponse response = userService.findOrCreateUser(userRequest);
         return ResponseEntity.ok(response);
 
     }

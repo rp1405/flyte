@@ -1,5 +1,7 @@
 package com.flyte.backend.model;
 
+import java.time.Instant;
+
 import com.flyte.backend.enums.RoomType;
 
 import jakarta.persistence.Column;
@@ -16,8 +18,14 @@ public class Room extends BaseEntity {
 
     @Column(nullable = false)
     private String name;
+
     @Column
     private String description;
+
     @Column(nullable = false)
     private RoomType type;
+
+    @Column(name = "expiry_time")
+    private Instant expiryTime;
+
 }
