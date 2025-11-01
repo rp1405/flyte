@@ -2,7 +2,6 @@ package com.flyte.backend.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.RequiredArgsConstructor;
 
 import com.flyte.backend.repository.MessageRepository;
 import com.flyte.backend.repository.RoomRepository;
@@ -53,10 +52,6 @@ public class MessageService {
 
     public List<Message> getMessagesByUser(UUID userId) {
         return messageRepository.findByUserIdOrderByCreatedAtDesc(userId);
-    }
-
-    public List<Message> getNewMessages(UUID roomId, UUID lastMessageId) {
-        return messageRepository.findByRoomIdAndIdGreaterThanOrderByCreatedAtAsc(roomId, lastMessageId);
     }
 
     public Long getMessageCount(UUID roomId) {

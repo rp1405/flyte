@@ -17,9 +17,6 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     // Find messages by user ID
     List<Message> findByUserIdOrderByCreatedAtDesc(UUID userId);
     
-    // Find messages in a room after a specific message ID
-    List<Message> findByRoomIdAndIdGreaterThanOrderByCreatedAtAsc(UUID roomId, UUID lastMessageId);
-    
     // Count total messages in a room
     Long countByRoomId(UUID roomId);
 }

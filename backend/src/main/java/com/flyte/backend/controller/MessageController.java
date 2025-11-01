@@ -39,14 +39,6 @@ public class MessageController {
         return ResponseEntity.ok(messages);
     }
 
-    @GetMapping("/room/{roomId}/new/{lastMessageId}")
-    public ResponseEntity<List<Message>> getNewMessages(
-            @PathVariable UUID roomId,
-            @PathVariable UUID lastMessageId) {
-        List<Message> messages = messageService.getNewMessages(roomId, lastMessageId);
-        return ResponseEntity.ok(messages);
-    }
-
     @GetMapping("/room/{roomId}/count")
     public ResponseEntity<Long> getMessageCount(@PathVariable UUID roomId) {
         Long count = messageService.getMessageCount(roomId);
