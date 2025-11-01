@@ -1,5 +1,7 @@
 package com.flyte.backend.model;
 
+import com.flyte.backend.enums.MessageType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ForeignKey;
@@ -26,9 +28,11 @@ public class Message extends BaseEntity{
     @Column(nullable = false)
     private String messageText;
 
+    @Column(nullable = false)
     private String messageHTML;
 
-    private String mediaType;
+    @Column(nullable = false)
+    private MessageType mediaType;
 
     private String mediaLink;
     

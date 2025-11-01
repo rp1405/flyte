@@ -17,8 +17,10 @@ public class CreateMessageRequest {
     @NotBlank(message = "Message text cannot be empty")
     private String messageText;
 
+    @NotBlank(message = "Message HTML cannot be empty")
     private String messageHTML;
 
+    @NotBlank(message = "Media type cannot be empty")
     private String mediaType;
     
     private String mediaLink;
