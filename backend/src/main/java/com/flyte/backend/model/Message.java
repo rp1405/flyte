@@ -1,0 +1,35 @@
+package com.flyte.backend.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+@Data
+@Entity
+@EqualsAndHashCode(callSuper = true)
+@Table(name = "messages")
+public class Message extends BaseEntity{
+
+    @ManyToOne
+    @JoinColumn(name = "room_id", nullable = false, foreignKey = @ForeignKey(name = "fk_room_id"), referencedColumnName = "id")
+    private Room room;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_user_id"), referencedColumnName = "id")
+    private User user;
+
+    @Column(nullable = false)
+    private String messageText;
+
+    private String messageHTML;
+
+    private String mediaType;
+
+    private String mediaLink;
+    
+}
