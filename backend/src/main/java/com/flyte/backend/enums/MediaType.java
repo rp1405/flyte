@@ -1,7 +1,7 @@
 
 package com.flyte.backend.enums;
 
-public enum MessageType {
+public enum MediaType {
     TEXT,
     FILE,
     IMAGE,
