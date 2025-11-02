@@ -1,6 +1,9 @@
 package com.flyte.backend.DTO.Message;
 
 import java.util.UUID;
+
+import com.flyte.backend.enums.MediaType;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -20,8 +23,8 @@ public class CreateMessageRequest {
     @NotBlank(message = "Message HTML cannot be empty")
     private String messageHTML;
 
-    @NotBlank(message = "Media type cannot be empty")
-    private String mediaType;
+    @NotNull(message = "Media type cannot be empty")
+    private MediaType mediaType;
     
     private String mediaLink;
 }
