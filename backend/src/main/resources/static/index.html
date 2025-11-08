@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Chat Client</title>
+    <!-- 
+      1. SockJS Client: Provides WebSocket fallback
+      2. Stomp.js Client: Understands the STOMP protocol
+    -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid #e0e0e0;
+        }
+        .chat-header {
+            background: #007bff;
+            color: white;
+            padding: 20px;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        .controls, .send-area {
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+        }
+        .controls-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .controls-group input {
+            flex-grow: 1;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .controls-group button {
+            padding: 10px 15px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        button#connect { background-color: #28a745; color: white; }
+        button#disconnect { background-color: #dc3545; color: white; }
+        button#sendMessage { background-color: #007bff; color: white; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fafafa;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .message.server {
+            background: #e9ecef;
+            color: #495057;
+            align-self: flex-start;
+        }
+        .message.client {
+            background: #007bff;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">Spring Boot WebSocket Chat</div>
+
+        <div class="controls">
+            <div class="controls-group">
+                <input type="text" id="roomId" placeholder="Enter Flight Room ID (UUID)" value="883fc91d-42bb-4739-b9c6-b11982adcf76" />
+                <button id="connect" onclick="connect();">Connect</button>
+                <button id="disconnect" onclick="disconnect();" disabled>Disconnect</button>
+            </div>
+        </div>
+
+        <div id="messages">
+            <div class="message server">Status: Not Connected</div>
+        </div>
+
+        <div class="send-area">
+            <div class="controls-group">
+                <input type="text" id="messageText" placeholder="Write a message..." disabled/>
+                <button id="sendMessage" onclick="sendMessage();" disabled>Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var stompClient = null;
+        var currentRoomId = null;
+
+        function setConnected(connected) {
+            document.getElementById("connect").disabled = connected;
+            document.getElementById("disconnect").disabled = !connected;
+            document.getElementById("sendMessage").disabled = !connected;
+            document.getElementById("messageText").disabled = !connected;
+            document.getElementById("roomId").disabled = connected;
+        }
+
+        function showMessage(message, type = 'server') {
+            var messagesArea = document.getElementById("messages");
+            var messageElement = document.createElement('div');
+            messageElement.classList.add('message', type);
+            messageElement.textContent = message;
+            messagesArea.appendChild(messageElement);
+            messagesArea.scrollTop = messagesArea.scrollHeight; // Auto-scroll
+        }
+
+        function connect() {
+            currentRoomId = document.getElementById("roomId").value;
+            if (!currentRoomId) {
+                alert("Please enter a Room ID");
+                return;
+            }
+
+            // 1. Create a new SockJS connection.
+            // This URL is from your WebSocketConfig (registry.addEndpoint("/ws"))
+            var socket = new SockJS('/ws');
+
+            // 2. Create a STOMP client over the SockJS connection
+            stompClient = Stomp.over(socket);
+
+            // 3. Define Authentication Headers (FOR EXPLICIT AUTH)
+            // In a real app, you'd get this token from localStorage after login.
+            // This is for a stateless (JWT) authentication approach.
+            // If you are using stateful (cookie) auth, you can leave headers as {}
+            var myAuthToken = "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2Vy...YOUR_JWT_HERE";
+
+            var headers = {
+                
+            };
+
+            // 4. Connect to the STOMP server, passing in the auth headers
+            stompClient.connect(headers, function (frame) {
+                setConnected(true);
+                showMessage("Connected to room: " + currentRoomId, 'server');
+                console.log('Connected: ' + frame);
+
+                // 5. Subscribe to the room-specific topic
+                // This destination is what your server broadcasts to
+                var subscriptionUrl = '/topic/room/' + currentRoomId;
+                stompClient.subscribe(subscriptionUrl, function (message) {
+                    // When a message arrives, parse it and show it
+                    var broadcastMessage = JSON.parse(message.body);
+                    
+                    // This assumes your ServerMessage DTO has 'senderUsername' and 'content'
+                    var display = broadcastMessage.senderUserName + ": " + broadcastMessage.messageText;
+                    showMessage(display, 'client');
+                });
+
+            }, function(error) {
+                // On error, show a more descriptive message if possible
+                console.error("Connection error: " + error);
+                if (error.headers && error.headers.message) {
+                     showMessage("Connection Error: " + error.headers.message, 'server');
+                } else {
+                     showMessage("Connection Error: " + String(error), 'server');
+                }
+            });
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            setConnected(false);
+            showMessage("Disconnected.", 'server');
+            console.log("Disconnected");
+        }
+
+        function sendMessage() {
+            var messageContent = document.getElementById("messageText").value;
+            if (!messageContent || !stompClient) {
+                return;
+            }
+
+            // 5. Create the JSON payload.
+            // This must match your `CreateMessageRequest` DTO.
+            // The server gets `userId` (from auth) and `roomId` (from the URL).
+            var messagePayload = {
+                messageText: messageContent,
+                messageHTML: "<p>" + messageContent + "</p>", // Example HTML
+                mediaType: "TEXT",
+                mediaLink: null
+            };
+
+            // 6. Send the message to the correct destination
+            // This URL is from your `ChatController`'s @MessageMapping
+            var destination = "/app/chat.send/" + currentRoomId;
+            
+            stompClient.send(
+                destination,
+                {}, // No special headers
+                JSON.stringify(messagePayload)
+            );
+
+            // Clear the input field
+            document.getElementById("messageText").value = "";
+        }
+
+        // Add event listener for 'Enter' key
+        document.getElementById("messageText").addEventListener("keypress", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); //
+                sendMessage();
+            }
+        });
+
+    </script>
+</body>
+</html>
+
