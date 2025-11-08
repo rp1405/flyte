@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.security.Principal;
 import java.util.UUID;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,8 +26,11 @@ public class JourneyController {
     }
 
     @PostMapping("/create")
-    public Journey postMethodName(@Valid @RequestBody CreateJourneyRequest journeyRequest) {
-        return journeyService.createJourney(journeyRequest);
+    public Journey postMethodName(@Valid @RequestBody CreateJourneyRequest journeyRequest, Principal principal) {
+
+        String email = principal.getName();
+        return journeyService.createJourney(journeyRequest, email);
+
     }
 
     @GetMapping("/getJouney")

@@ -9,6 +9,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Controller;
 
+import java.security.Principal;
 import java.util.Map;
 import jakarta.validation.Valid;
 
@@ -25,10 +26,9 @@ public class ChatController {
     @MessageMapping("/chat.send/{roomId}") 
     public void handleRealtimeMessage(@DestinationVariable String roomId,
                                       @Payload @Valid ClientMessage request,
-                                      OAuth2AuthenticationToken authentication) {
+                                      Principal principal) {
 
-        Map<String, Object> attributes = authentication.getPrincipal().getAttributes();
-        String email = (String) attributes.get("email");
+        String email = principal.getName();
         chatService.processAndBroadcastMessage(request, roomId, email);
     }
 }

@@ -35,10 +35,10 @@ public class JourneyService {
     }
 
     @Transactional
-    public Journey createJourney(CreateJourneyRequest journey) {
+    public Journey createJourney(CreateJourneyRequest journey, String userEmail) {
         // 1. Validate User Existence
-        User user = userRepository.findById(journey.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + journey.getUserId()));
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found with Email: " + userEmail));
 
         // 2. Create and Populate Journey
         Journey newJourney = new Journey();

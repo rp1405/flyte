@@ -6,6 +6,7 @@ import com.flyte.backend.service.UserService;
 
 import jakarta.validation.Valid;
 
+import java.security.Principal;
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,9 @@ public class UserController {
 
     // Endpoint to get a user by email
     @GetMapping("/getUserByEmail")
-    public ResponseEntity<UserResponse> getUser(@RequestParam String email) {
+    public ResponseEntity<UserResponse> getUser(Principal principal) {
+        
+        String email = principal.getName();
         UserResponse response = userService.getUserByEmail(email);
         if (response != null) {
             return ResponseEntity.ok(response);
