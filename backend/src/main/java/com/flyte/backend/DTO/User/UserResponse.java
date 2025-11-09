@@ -8,7 +8,7 @@ import lombok.EqualsAndHashCode;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class UserResponse extends BaseEntity {
+public class UserResponse extends BaseEntity{
     public final String name;
     public final String email;
     public final String profilePictureUrl;

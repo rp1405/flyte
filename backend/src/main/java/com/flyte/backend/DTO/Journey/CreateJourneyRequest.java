@@ -1,7 +1,6 @@
 package com.flyte.backend.DTO.Journey;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,7 +8,6 @@ import lombok.Data;
 
 @Data
 public class CreateJourneyRequest {
-    private UUID userId;
 
     @NotBlank(message = "Source location is required and cannot be blank")
     private String source;

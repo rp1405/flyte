@@ -1,5 +1,8 @@
 package com.flyte.backend.model;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import com.flyte.backend.enums.MediaType;
 
 import jakarta.persistence.Column;
@@ -19,6 +22,7 @@ public class Message extends BaseEntity{
 
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false, foreignKey = @ForeignKey(name = "fk_room_id"), referencedColumnName = "id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Room room;
 
     @ManyToOne

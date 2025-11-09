@@ -28,16 +28,16 @@ public class ChatService {
     }
 
     @Transactional
-    public void processAndBroadcastMessage(ClientMessage request, String roomId, String email) {
+    public void processAndBroadcastMessage(ClientMessage request, String roomId, String userID) {
 
         // 1. Get the SECURE user ID from the email
-        User sender = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found: " + email));
-        UUID secureUserId = sender.getId();
+        UUID uuid = UUID.fromString(userID);
+        User sender = userRepository.findById(uuid)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userID));
 
         // 2. Prepare the DTO for the MessageService
         CreateMessageRequest message = new CreateMessageRequest();
-        message.setUserId(secureUserId);
+        message.setUserId(uuid);
         message.setRoomId(UUID.fromString(roomId));
         message.setMessageText(request.getMessageText());
         message.setMessageHTML(request.getMessageHTML());
