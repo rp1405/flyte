@@ -28,8 +28,8 @@ public class JourneyController {
     @PostMapping("/create")
     public Journey postMethodName(@Valid @RequestBody CreateJourneyRequest journeyRequest, Principal principal) {
 
-        String email = principal.getName();
-        return journeyService.createJourney(journeyRequest, email);
+        String userID = principal.getName();
+        return journeyService.createJourney(journeyRequest, userID);
 
     }
 

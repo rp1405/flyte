@@ -1,6 +1,5 @@
 package com.flyte.backend.security;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -15,11 +14,13 @@ import org.springframework.util.StringUtils;
 @Component
 public class AuthChannelInterceptor implements ChannelInterceptor {
 
-    @Autowired
     private JwtTokenProvider tokenProvider;
-
-    @Autowired
     private CustomUserDetailsService customUserDetailsService;
+
+    public AuthChannelInterceptor(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService){
+        this.customUserDetailsService = customUserDetailsService;
+        this.tokenProvider = tokenProvider;
+    }
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -36,8 +37,8 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
                 String jwt = token.substring(7);
                 
                 if (tokenProvider.validateToken(jwt)) {
-                    String email = tokenProvider.getEmailFromJWT(jwt);
-                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+                    String userID = tokenProvider.getUserIDFromJWT(jwt);
+                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(userID);
                     
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());

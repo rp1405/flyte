@@ -6,7 +6,6 @@ import com.flyte.backend.service.UserService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -19,14 +18,20 @@ import java.io.IOException;
 @Component
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
-    @Autowired
-    private JwtTokenProvider tokenProvider;
+    private final JwtTokenProvider tokenProvider;
+    private final UserService userService;
+    private final String redirectUri;
 
-    @Autowired
-    private UserService userService; 
+    public OAuth2LoginSuccessHandler(
+            JwtTokenProvider tokenProvider,
+            UserService userService,
+            @Value("${app.oauth2.redirect-uri}") String redirectUri) {
+        this.tokenProvider = tokenProvider;
+        this.userService = userService;
+        this.redirectUri = redirectUri;
+    }
 
-    @Value("${app.oauth2.redirect-uri}")
-    private String redirectUri;
+
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -47,7 +52,9 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
         UserResponse userResponse = userService.findOrCreateUser(userRequest);
 
-        String token = tokenProvider.generateToken(authentication);
+        String userIdString = userResponse.getId().toString();
+
+        String token = tokenProvider.generateToken(userIdString);
 
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("token", token)

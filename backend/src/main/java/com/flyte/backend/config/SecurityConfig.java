@@ -1,6 +1,5 @@
 package com.flyte.backend.config;
 
-import com.flyte.backend.security.CustomUserDetailsService;
 import com.flyte.backend.security.JwtAuthenticationFilter;
 import com.flyte.backend.security.OAuth2LoginSuccessHandler;
 import org.springframework.context.annotation.Bean;
@@ -22,14 +21,11 @@ public class SecurityConfig {
 
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomUserDetailsService customUserDetailsService;
 
     public SecurityConfig(OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
-                          JwtAuthenticationFilter jwtAuthenticationFilter,
-                          CustomUserDetailsService customUserDetailsService) {
+                          JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.oAuth2LoginSuccessHandler = oAuth2LoginSuccessHandler;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Bean
