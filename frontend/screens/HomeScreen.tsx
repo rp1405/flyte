@@ -5,6 +5,7 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -23,14 +24,16 @@ import DateTimePickerSection from "@/components/DateTimePickerSection";
 import AirportSearchModal from "@/components/AirportSearchModal";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { RootTabParamList } from "./TabNavigator";
+import {createJourneyService} from "../services/JourneyService"
+import {CreateJourneyRequestPayload} from "../models/journey"
 
 type HomeScreenNavigationProp = NavigationProp<RootTabParamList>;
 
 export default function HomeScreen() {
 
-   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const navigation = useNavigation<HomeScreenNavigationProp>();
 
-   const [sourceAirport, setSourceAirport] = useState<Airport | null>(null);
+  const [sourceAirport, setSourceAirport] = useState<Airport | null>(null);
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
   const [flightNumber, setFlightNumber] = useState<string>("");
 
@@ -39,6 +42,46 @@ export default function HomeScreen() {
 
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [showDestModal, setShowDestModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleCreateJourney = async () => {
+    // 1. Client-side Validation
+    if (
+      !sourceAirport ||
+      !destAirport ||
+      !departureDate ||
+      !arrivalDate ||
+      !flightNumber.trim()
+    ) {
+      console.log(
+        "Missing Details",
+        "Please fill in all locations, dates, and flight number before proceeding."
+      );
+      return;
+    }
+
+    // 2. Format data for backend (match DTO structure)
+    // Java 'Instant' expects an ISO-8601 string (e.g., 2023-10-27T15:30:00.000Z)
+    // .toISOString() provides exactly this format.
+    const requestPayload: CreateJourneyRequestPayload = {
+      source: sourceAirport.iata, // Send IATA code (e.g., "BOM")
+      destination: destAirport.iata, // Send IATA code (e.g., "DEL")
+      departureTime: departureDate.toISOString(),
+      arrivalTime: arrivalDate.toISOString(),
+      flightNumber: flightNumber.trim(),
+    };
+
+    try {
+      setIsLoading(true); 
+      const response = await createJourneyService(requestPayload);
+      console.log("Journey created successfully:", response);
+
+    } catch (error: any) {
+      console.error("Creation Error:", error);
+    } finally {
+      setIsLoading(false); // Stop spinner regardless of outcome
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -133,11 +176,27 @@ export default function HomeScreen() {
             onArrivalChange={setArrivalDate}
           />
 
-          <TouchableOpacity className="w-full mt-6 bg-brand py-4 rounded-2xl flex-row items-center justify-center active:opacity-90">
-            <Text className="text-white font-semibold text-base mr-2">
-              Find Travelers
-            </Text>
-            <ArrowRight color="white" size={20} />
+          <TouchableOpacity
+            onPress={handleCreateJourney}
+            disabled={isLoading} // Prevent double submission
+            activeOpacity={0.9}
+            // Dynamically change opacity if loading
+            className={`w-full mt-6 bg-brand py-4 rounded-2xl flex-row items-center justify-center ${
+              isLoading ? "opacity-80" : ""
+            }`}
+          >
+            {isLoading ? (
+              // Show spinner while loading
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              // Show Text and Icon normally
+              <>
+                <Text className="text-white font-semibold text-base mr-2">
+                  Find Travelers
+                </Text>
+                <ArrowRight color="white" size={20} />
+              </>
+            )}
           </TouchableOpacity>
         </View>
 

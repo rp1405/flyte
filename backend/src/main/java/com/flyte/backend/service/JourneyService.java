@@ -1,6 +1,7 @@
 package com.flyte.backend.service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -35,10 +36,10 @@ public class JourneyService {
     }
 
     @Transactional
-    public Journey createJourney(CreateJourneyRequest journey, String userID) {
+    public Journey createJourney(CreateJourneyRequest journey) {
         // 1. Validate User Existence
-        UUID uuid = UUID.fromString(userID);
-        User user = userRepository.findById(uuid)
+        //UUID uuid = UUID.fromString(journey.getUserId);
+        User user = userRepository.findById(journey.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with UserID: " + userID));
 
         // 2. Create and Populate Journey
@@ -137,5 +138,10 @@ public class JourneyService {
     public Journey getJourneyById(UUID journeyId) {
         return journeyRepository.findById(journeyId)
                 .orElseThrow(() -> new RuntimeException("Journey not found with ID: " + journeyId));
+    }
+
+    public List<Journey> getJourneyByUser(String userID){
+        UUID uuid = UUID.fromString(userID);
+        return journeyRepository.findByUserID
     }
 }
