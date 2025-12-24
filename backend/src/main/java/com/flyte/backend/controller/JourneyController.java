@@ -29,7 +29,7 @@ public class JourneyController {
 
     @PostMapping("/create")
     public Journey createJourney(@Valid @RequestBody CreateJourneyRequest journeyRequest) {
-        
+
         return journeyService.createJourney(journeyRequest);
 
     }
