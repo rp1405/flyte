@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Service;
 
 import com.flyte.backend.DTO.Journey.CreateJourneyRequest;
@@ -145,6 +147,12 @@ public class JourneyService {
                 }
 
                 // 3. Save and Return
+                ExampleMatcher matcher = ExampleMatcher.matching()
+                                .withIgnorePaths("id", "createdAt", "updatedAt");
+                Example<Journey> alreadyExistingSimilarJourney = Example.of(newJourney, matcher);
+                if (journeyRepository.exists(alreadyExistingSimilarJourney)) {
+                        throw new RuntimeException("Similar journey already exists.");
+                }
                 return journeyRepository.save(newJourney);
         }
 
