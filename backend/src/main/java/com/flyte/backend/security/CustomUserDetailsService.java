@@ -15,24 +15,24 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private UserRepository userRepository;
 
-    public CustomUserDetailsService(UserRepository userRepository){
+    public CustomUserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @Override
-    public UserDetails loadUserByUsername(String userID) throws UsernameNotFoundException {
-        
-        UUID uuid = UUID.fromString(userID);
+    public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
+
+        UUID uuid = UUID.fromString(userId);
 
         User user = userRepository.findById(uuid)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userID));
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userId));
 
         // Convert your `User` entity to Spring Security's `UserDetails`
-        // We are passing an empty list for authorities (roles), but you can add roles here.
+        // We are passing an empty list for authorities (roles), but you can add roles
+        // here.
         return new org.springframework.security.core.userdetails.User(
                 user.getId().toString(),
-                "", 
-                new ArrayList<>() 
-        );
+                "",
+                new ArrayList<>());
     }
 }

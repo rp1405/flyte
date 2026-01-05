@@ -21,30 +21,31 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private CustomUserDetailsService customUserDetailsService;
 
-    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService){
+    public JwtAuthenticationFilter(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService) {
         this.customUserDetailsService = customUserDetailsService;
         this.tokenProvider = tokenProvider;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         try {
             // 1. Get the token from the "Authorization" header
             String jwt = getJwtFromRequest(request);
 
             // 2. Validate the token
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                
+
                 // 3. Get the user email from the token
-                String userID = tokenProvider.getUserIDFromJWT(jwt);
+                String userId = tokenProvider.getUserIDFromJWT(jwt);
 
                 // 4. Load the user's details from the database
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(userID);
-                
+                UserDetails userDetails = customUserDetailsService.loadUserByUsername(userId);
+
                 // 5. Create an Authentication object
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
-                
+
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 // 6. Set the authentication in Spring's SecurityContext
