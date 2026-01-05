@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,4 +39,8 @@ public class JourneyController {
         return journeyService.getJourneyById(id);
     }
 
+    @GetMapping("/getJourney/user")
+    public List<Journey> getJourneyByUserId(@RequestParam UUID id){
+        return journeyService.getJourneyByUserId(id);
+    }
 }

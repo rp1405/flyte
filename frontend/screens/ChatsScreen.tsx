@@ -1,124 +1,217 @@
-// Added useMemo here
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-// Added X icon here for clearing search
-import { Search, Edit3, PlaneTakeoff, Building2, X } from "lucide-react-native";
+// Added needed icons
+import {
+  Search,
+  Edit3,
+  PlaneTakeoff,
+  PlaneLanding,
+  Plane,
+  Building2,
+  X,
+  AlertCircle,
+} from "lucide-react-native";
 import { AppColors } from "../constants/colors";
 import ChatItem, { ChatItemProps } from "../components/ChatItem";
-
 import { useNavigation } from "@react-navigation/native";
-// Import the types we defined in App.tsx. Adjust path if needed, e.g., "../../App"
-import { RootStackNavigationProp } from "../App";
+import { RootStackNavigationProp } from "../App"; // Adjust path if necessary
 
-// We can reuse the props interface from the child component for our data type here
+// --- NEW IMPORTS FOR REAL DATA ---
+import { useChats } from "../hooks/useChats";
+import { JourneyResponse, JourneyRoom } from "../models/journey";
+
+// Define the shape the UI component expects
 type ChatItemData = ChatItemProps["item"];
 
-// --- Dummy Data (Unchanged) ---
-const DUMMY_CHATS: ChatItemData[] = [
-  {
-    id: "1",
-    type: "group",
-    title: "Flight BA 149",
-    lastMessage: "Sarah: Has anyone passed security yet? The line is...",
-    time: "12:30 PM",
-    unreadCount: 5,
-    groupIconConfig: {
-      icon: PlaneTakeoff,
-      bgColorBg: "bg-blue-900/30",
-      iconColorHex: AppColors.brand,
-    },
-  },
-  {
-    id: "2",
-    type: "group",
-    title: "Mumbai Int. Airport (BOM)",
-    lastMessage: "Raj: Taxi sharing to Andheri? Looking for 2 more.",
-    time: "11:45 AM",
-    unreadCount: 2,
-    groupIconConfig: {
-      icon: Building2,
-      bgColorBg: "bg-orange-900/30",
-      iconColorHex: "#f97316", // Orange hex
-    },
-  },
-  {
-    id: "3",
-    type: "direct",
-    title: "Alex Chen",
-    lastMessage: "Yeah, I'll meet you at Gate A12 in 10 mins.",
-    time: "Yesterday",
-    unreadCount: 0,
-    avatarUrl: "https://api.dicebear.com/7.x/avataaars/png?seed=Alex",
-  },
-  {
-    id: "4",
-    type: "direct",
-    title: "Maria Rodriguez",
-    lastMessage: "Safe flight! Let me know when you land.",
-    time: "Mon",
-    unreadCount: 0,
-    avatarUrl: "https://api.dicebear.com/7.x/avataaars/png?seed=Maria",
-  },
-  {
-    id: "5",
-    type: "group",
-    title: "London Heathrow (LHR)",
-    lastMessage: "System: Welcome to the LHR public chat room.",
-    time: "Mon",
-    unreadCount: 0,
-    groupIconConfig: {
-      icon: Building2,
-      bgColorBg: "bg-slate-800/30",
-      iconColorHex: AppColors.subtext,
-    },
-  },
-];
+// --- TEMPORARY: Hardcoded ID for testing until Auth is ready ---
+// Replace this with a real User UUID from your PostgreSQL database.
+const TEMP_USER_ID = process.env.EXPO_PUBLIC_TEMP_LOGIN_USER; //8262a8be-7c48-48f1-8149-d02e2d9d65c5
 
 export default function ChatsScreen() {
-
   const navigation = useNavigation<RootStackNavigationProp>();
-
   const [searchText, setSearchText] = useState<string>("");
 
-  // --- SEARCH LOGIC ---
-  // useMemo ensures filtering only runs when searchText changes
+  // --- 1. FETCH REAL DATA VIA HOOK ---
+  const {
+    chats: rawJourneys,
+    isLoading,
+    error,
+    refetch,
+  } = useChats(TEMP_USER_ID);
+
+  // --- Helper: Determine Icon Config based on room type ---
+  const getIconConfig = useCallback((roomType: string) => {
+    // Normalize string just in case backend sends lowercase
+    const typeUpper = roomType?.toUpperCase();
+    switch (typeUpper) {
+      case "SOURCE":
+        return {
+          icon: PlaneTakeoff, // Departure icon
+          bgColorBg: "bg-blue-900/30",
+          iconColorHex: AppColors.brand,
+        };
+      case "DESTINATION":
+        return {
+          icon: PlaneLanding, // Arrival icon
+          bgColorBg: "bg-orange-900/30",
+          iconColorHex: "#f97316", // Orange
+        };
+      case "FLIGHT":
+        return {
+          icon: Plane, // In-flight icon
+          bgColorBg: "bg-purple-900/30",
+          iconColorHex: "#9333ea", // Purple
+        };
+      default:
+        return {
+          icon: Building2, // Generic fallback
+          bgColorBg: "bg-slate-800/30",
+          iconColorHex: AppColors.subtext,
+        };
+    }
+  }, []);
+
+  // --- Helper: Simple time formatter ---
+  const formatTimeStr = (isoString: string) => {
+    try {
+      if (!isoString) return "";
+      const date = new Date(isoString);
+      // Returns something like "10:45 AM" based on device locale
+      return date.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch (e) {
+      return "";
+    }
+  };
+
+  // --- 2. DATA TRANSFORMATION & DEDUPLICATION ---
+  // Backend gives Journeys, UI needs distinct Rooms.
+  const processedChats = useMemo(() => {
+    const uiChats: ChatItemData[] = [];
+
+    if (!rawJourneys || rawJourneys.length === 0) return [];
+
+    // --- FIX: Create a Set to track IDs we have already seen ---
+    const seenRoomIds = new Set<string>();
+
+    console.log("Processing journeys:", rawJourneys.length);
+
+    // Iterate through each journey
+    rawJourneys.forEach((journey: JourneyResponse) => {
+      // Collect the three nested room objects
+      const roomsToProcess: (JourneyRoom | null)[] = [
+        journey.sourceRoom,
+        journey.destinationRoom,
+        journey.flightRoom,
+      ];
+
+      roomsToProcess.forEach((room) => {
+        // Safety check: ensure room exists and has an ID
+        if (!room || !room.id) return;
+
+        // --- FIX: Check if we have already processed this room ID ---
+        if (seenRoomIds.has(room.id)) {
+          // If yes, skip it to avoid duplicate keys in FlatList
+          return;
+        }
+
+        // --- FIX: Mark this ID as seen so we don't add it again ---
+        seenRoomIds.add(room.id);
+
+        // Add to UI list
+        uiChats.push({
+          id: room.id,
+          type: "group", // All current backend rooms are groups
+          title: room.name || "Unknown Room", // Use room name as title
+          // Using the description as a placeholder for last message
+          lastMessage: room.description
+            ? room.description.substring(0, 35) +
+              (room.description.length > 35 ? "..." : "")
+            : "Tap to start chatting",
+          time: formatTimeStr(room.updatedAt), // Use updatedAt for display
+          unreadCount: 0, // Not in backend response yet
+          // Generate icon based on type string (SOURCE, FLIGHT, etc.)
+          groupIconConfig: getIconConfig(room.type),
+        });
+      });
+    });
+
+    // Optional: Sort by time (newest first) based on string comparison
+    return uiChats.sort((a, b) => (a.time < b.time ? 1 : -1));
+  }, [rawJourneys, getIconConfig]);
+
+  // --- 3. SEARCH LOGIC (Applied to the processed list) ---
   const filteredChats = useMemo(() => {
-    // 1. If search is empty, return the original list for efficiency
     if (!searchText.trim()) {
-      return DUMMY_CHATS;
+      // Use the processed real data here
+      return processedChats;
     }
 
     const lowerCaseQuery = searchText.toLowerCase().trim();
 
-    // 2. Filter the list
-    return DUMMY_CHATS.filter((chat) => {
-      // Perform case-insensitive match on the title
+    return processedChats.filter((chat) => {
       return chat.title.toLowerCase().includes(lowerCaseQuery);
-      // Note: If you wanted to search messages too, you'd add:
-      // || chat.lastMessage.toLowerCase().includes(lowerCaseQuery)
     });
-  }, [searchText]); // Dependency array: only rerun if this changes
+  }, [searchText, processedChats]); // Depends on processedChats now
 
   const handleChatPress = (item: ChatItemData) => {
-    // --- 3. PERFORM NAVIGATION ---
-    // Because this screen is defined in the RootStack in App.tsx,
-    // navigating to it pushes it over the tab bar.
     navigation.navigate("ChatDetail", {
-      chatId: item.id,
+      roomId: item.id,
       title: item.title,
       type: item.type,
       avatarUrl: item.type === "direct" ? item.avatarUrl : undefined,
     });
   };
 
-  // --- Main Component Return ---
+  // Handler for pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
+  // --- LOADING STATE ---
+  // Show full-screen loading only on initial load if data is empty
+  if (isLoading && processedChats.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color={AppColors.brand} />
+        <Text className="text-subtext mt-4">Loading your chats...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  // --- ERROR STATE ---
+  if (error && processedChats.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center p-6">
+        <AlertCircle color="#ef4444" size={48} style={{ marginBottom: 16 }} />
+        <Text className="text-text text-xl font-bold mb-2">
+          It's quiet here
+        </Text>
+        <Text className="text-subtext text-center mb-6">
+          We couldn't load your chats. {error}
+        </Text>
+        <TouchableOpacity
+          onPress={refetch}
+          className="bg-brand px-6 py-3 rounded-xl"
+        >
+          <Text className="text-white font-semibold">Try Again</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  // --- MAIN RENDER ---
   return (
     <SafeAreaView className="flex-1 bg-background">
       {/* --- Header --- */}
@@ -129,21 +222,19 @@ export default function ChatsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* --- Search Bar Content Header --- */}
+      {/* --- Search Bar --- */}
       <View className="px-4 py-3 bg-background">
         <View className="flex-row items-center bg-surface px-4 py-3 rounded-xl border border-border">
           <Search color={AppColors.subtext} size={20} />
           <TextInput
-            placeholder="Search groups or messages"
+            placeholder="Search rooms"
             placeholderTextColor={AppColors.subtext}
             value={searchText}
             onChangeText={setSearchText}
-            // Added pr-8 (padding right) to make space for the clear button if text exists
             className={`flex-1 ml-3 text-text font-medium text-base p-0 ${
               searchText.length > 0 ? "pr-2" : ""
             }`}
           />
-          {/* Clear Search Button - appears only when text is typed */}
           {searchText.length > 0 && (
             <TouchableOpacity
               onPress={() => setSearchText("")}
@@ -157,19 +248,32 @@ export default function ChatsScreen() {
 
       {/* --- Chat List --- */}
       <FlatList
-        // UPDATED: Use the filtered list here instead of DUMMY_CHATS
+        // Use the filtered, processed real data
         data={filteredChats}
         renderItem={({ item }) => (
           <ChatItem item={item} onPress={() => handleChatPress(item)} />
         )}
+        // Key extractor uses the unique room ID
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
-        // Added empty state feedback
+        // Add Pull-to-Refresh
+        refreshControl={
+          <RefreshControl
+            refreshing={isLoading}
+            onRefresh={onRefresh}
+            tintColor={AppColors.brand}
+          />
+        }
         ListEmptyComponent={
-          <View className="pt-10 items-center">
-            <Text className="text-subtext text-lg font-medium">
-              No chats found
+          <View className="pt-20 items-center px-6">
+            <Text className="text-text text-lg font-bold mb-2">
+              {searchText ? "No results found" : "No active chats"}
+            </Text>
+            <Text className="text-subtext text-center">
+              {searchText
+                ? `We couldn't find anything matching "${searchText}"`
+                : "Create a journey on the home screen to join chat rooms!"}
             </Text>
           </View>
         }

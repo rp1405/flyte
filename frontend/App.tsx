@@ -24,9 +24,9 @@ export type RootStackParamList = {
   Login: undefined;
   // Define params for ChatDetail (matches what ChatDetailScreen expects)
   ChatDetail: {
-    chatId: string;
-    title: string;
-    type: "group" | "direct";
+    roomId: string;
+    title?: string;
+    type?: "group" | "direct";
     avatarUrl?: string;
   };
 };

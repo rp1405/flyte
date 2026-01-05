@@ -98,7 +98,7 @@ public class JourneyService {
                 } else {
                         Room sourceRoom = new Room();
                         sourceRoom.setName(
-                                        "Room- " + journey.getSource() + "-" + journey.getFlightNumber());
+                                        "Room-" + journey.getSource() + "-" + journey.getFlightNumber());
                         sourceRoom.setType(RoomType.SOURCE);
                         Instant expiryTime = destinationSlotObj.getSlotEnd().plusSeconds(24 * 60 * 60); // 2 hours after
                                                                                                         // arrival
@@ -127,7 +127,7 @@ public class JourneyService {
                         Room destinationRoom = new Room();
                         destinationRoom.setName(
                                         "Room- " + journey.getDestination() + "-" + journey.getFlightNumber());
-                        destinationRoom.setType(RoomType.SOURCE);
+                        destinationRoom.setType(RoomType.DESTINATION);
                         Instant expiryTime = destinationSlotObj.getSlotEnd().plusSeconds(24 * 60 * 60); // 2 hours after
                                                                                                         // arrival
                                                                                                         // slot end

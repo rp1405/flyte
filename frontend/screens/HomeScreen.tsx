@@ -69,6 +69,7 @@ export default function HomeScreen() {
       departureTime: departureDate.toISOString(),
       arrivalTime: arrivalDate.toISOString(),
       flightNumber: flightNumber.trim(),
+      userId: process.env.EXPO_PUBLIC_TEMP_LOGIN_USER
     };
 
     try {

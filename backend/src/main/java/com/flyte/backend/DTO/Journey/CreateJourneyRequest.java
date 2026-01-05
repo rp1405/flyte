@@ -10,7 +10,7 @@ import lombok.Data;
 @Data
 public class CreateJourneyRequest {
 
-    @NotBlank(message = "User Id is required and cannot be blank")
+    @NotNull(message = "User Id is required and cannot be blank")
     private UUID userId;
 
     @NotBlank(message = "Source location is required and cannot be blank")

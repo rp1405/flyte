@@ -36,6 +36,7 @@ export interface CreateJourneyRequestPayload {
   departureTime: string; // ISO string
   arrivalTime: string; // ISO string
   flightNumber: string;
+  userId: string
 }
 
 // The data you get BACK from the backend on success
