@@ -10,9 +10,8 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class ServerMessage {
-    
+
     private UUID id;
-    private 
     private String senderUserName;
     private String messageText;
     private String messageHTML;

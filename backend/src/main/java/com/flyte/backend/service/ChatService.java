@@ -19,9 +19,9 @@ public class ChatService {
     private final MessageService messageService;
     private final SimpMessageSendingOperations messagingTemplate;
 
-    public ChatService(UserRepository userRepository, 
-                       MessageService messageService, 
-                       SimpMessageSendingOperations messagingTemplate) {
+    public ChatService(UserRepository userRepository,
+            MessageService messageService,
+            SimpMessageSendingOperations messagingTemplate) {
         this.userRepository = userRepository;
         this.messageService = messageService;
         this.messagingTemplate = messagingTemplate;
@@ -30,7 +30,6 @@ public class ChatService {
     @Transactional
     public void processAndBroadcastMessage(ClientMessage request, String roomId) {
 
-        
         User sender = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found: " + request.getUserId()));
 
@@ -48,12 +47,12 @@ public class ChatService {
 
         // 4. Create the broadcast DTO
         // ServerMessage broadcastMsg = new ServerMessage(
-        //         savedMessage.getId(),
-        //         sender.getName(),
-        //         savedMessage.getMessageText(),
-        //         savedMessage.getMessageHTML(),
-        //         savedMessage.getMediaType(),
-        //         savedMessage.getMediaLink()
+        // savedMessage.getId(),
+        // sender.getName(),
+        // savedMessage.getMessageText(),
+        // savedMessage.getMessageHTML(),
+        // savedMessage.getMediaType(),
+        // savedMessage.getMediaLink()
         // );
 
         // 5. Broadcast the new message to everyone in the room
