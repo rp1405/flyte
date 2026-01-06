@@ -37,4 +37,6 @@ public interface JourneyRepository extends JpaRepository<Journey, UUID> {
      * @return A list of matching journeys.
      */
     List<Journey> findByDestinationAndDestinationSlot(String destination, String destinationSlot);
+
+    List<Journey> findByUserId(UUID userId);
 }

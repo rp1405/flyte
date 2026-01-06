@@ -17,7 +17,7 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
     private JwtTokenProvider tokenProvider;
     private CustomUserDetailsService customUserDetailsService;
 
-    public AuthChannelInterceptor(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService){
+    public AuthChannelInterceptor(JwtTokenProvider tokenProvider, CustomUserDetailsService customUserDetailsService) {
         this.customUserDetailsService = customUserDetailsService;
         this.tokenProvider = tokenProvider;
     }
@@ -28,21 +28,21 @@ public class AuthChannelInterceptor implements ChannelInterceptor {
 
         // We only need to authenticate when the client first sends the CONNECT frame
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            
+
             // 1. Get the token from the STOMP native headers
             String token = accessor.getFirstNativeHeader("Authorization");
 
             // 2. Validate it just like in your HTTP filter
             if (StringUtils.hasText(token) && token.startsWith("Bearer ")) {
                 String jwt = token.substring(7);
-                
+
                 if (tokenProvider.validateToken(jwt)) {
-                    String userID = tokenProvider.getUserIDFromJWT(jwt);
-                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(userID);
-                    
+                    String userId = tokenProvider.getUserIDFromJWT(jwt);
+                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(userId);
+
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
-                    
+
                     // 3. CRITICAL: Set the user FOR THIS WEBSOCKET SESSION
                     accessor.setUser(authentication);
                 }

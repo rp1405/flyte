@@ -149,6 +149,9 @@
       var stompClient = null;
       var currentRoomId = null;
 
+      // Hardcoded userId for testing
+      var currentUserId = "8ecceabd-5022-4cad-ad8e-6e5f40acec25";
+
       // Helper function to get query parameters from the URL
       function getQueryParam(name) {
         const urlParams = new URLSearchParams(window.location.search);
@@ -247,6 +250,7 @@
         }
 
         var messagePayload = {
+          userId: currentUserId,
           messageText: messageContent,
           messageHTML: "<p>" + messageContent + "</p>",
           mediaType: "TEXT",

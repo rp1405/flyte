@@ -19,25 +19,23 @@ public class ChatService {
     private final MessageService messageService;
     private final SimpMessageSendingOperations messagingTemplate;
 
-    public ChatService(UserRepository userRepository, 
-                       MessageService messageService, 
-                       SimpMessageSendingOperations messagingTemplate) {
+    public ChatService(UserRepository userRepository,
+            MessageService messageService,
+            SimpMessageSendingOperations messagingTemplate) {
         this.userRepository = userRepository;
         this.messageService = messageService;
         this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
-    public void processAndBroadcastMessage(ClientMessage request, String roomId, String userID) {
+    public void processAndBroadcastMessage(ClientMessage request, String roomId) {
 
-        // 1. Get the SECURE user ID from the email
-        UUID uuid = UUID.fromString(userID);
-        User sender = userRepository.findById(uuid)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userID));
+        User sender = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found: " + request.getUserId()));
 
         // 2. Prepare the DTO for the MessageService
         CreateMessageRequest message = new CreateMessageRequest();
-        message.setUserId(uuid);
+        message.setUserId(request.getUserId());
         message.setRoomId(UUID.fromString(roomId));
         message.setMessageText(request.getMessageText());
         message.setMessageHTML(request.getMessageHTML());
@@ -48,15 +46,16 @@ public class ChatService {
         Message savedMessage = messageService.createMessage(message);
 
         // 4. Create the broadcast DTO
-        ServerMessage broadcastMsg = new ServerMessage(
-                sender.getName(),
-                savedMessage.getMessageText(),
-                savedMessage.getMessageHTML(),
-                savedMessage.getMediaType(),
-                savedMessage.getMediaLink()
-        );
+        // ServerMessage broadcastMsg = new ServerMessage(
+        // savedMessage.getId(),
+        // sender.getName(),
+        // savedMessage.getMessageText(),
+        // savedMessage.getMessageHTML(),
+        // savedMessage.getMediaType(),
+        // savedMessage.getMediaLink()
+        // );
 
         // 5. Broadcast the new message to everyone in the room
-        messagingTemplate.convertAndSend("/topic/room/" + roomId, broadcastMsg);
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, savedMessage);
     }
 }

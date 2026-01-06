@@ -10,8 +10,8 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
-public class JwtTokenProvider { 
-    
+public class JwtTokenProvider {
+
     private final String jwtSecret;
     private final int jwtExpirationInMs;
 
@@ -28,20 +28,20 @@ public class JwtTokenProvider {
     }
 
     // --- Method to generate a token ---
-    public String generateToken(String userID) {
+    public String generateToken(String userId) {
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationInMs);
 
         return Jwts.builder()
-                .subject(userID) // The user the token belongs to (their email)
+                .subject(userId) // The user the token belongs to (their email)
                 .issuedAt(new Date())
                 .expiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
     }
 
-    // --- Method to get the userID from the token ---
+    // --- Method to get the userId from the token ---
     public String getUserIDFromJWT(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(getSigningKey())
@@ -56,9 +56,9 @@ public class JwtTokenProvider {
     public boolean validateToken(String authToken) {
         try {
             Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(authToken);
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(authToken);
             return true;
         } catch (Exception ex) {
             // Can log different exceptions:

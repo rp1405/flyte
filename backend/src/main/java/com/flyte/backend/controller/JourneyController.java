@@ -10,14 +10,16 @@ import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@RestController("/api/journeys")
+@RestController
+@RequestMapping("/api/journeys")
 public class JourneyController {
     private final JourneyService journeyService;
 
@@ -26,10 +28,9 @@ public class JourneyController {
     }
 
     @PostMapping("/create")
-    public Journey postMethodName(@Valid @RequestBody CreateJourneyRequest journeyRequest, Principal principal) {
+    public Journey createJourney(@Valid @RequestBody CreateJourneyRequest journeyRequest) {
 
-        String userID = principal.getName();
-        return journeyService.createJourney(journeyRequest, userID);
+        return journeyService.createJourney(journeyRequest);
 
     }
 
@@ -38,4 +39,8 @@ public class JourneyController {
         return journeyService.getJourneyById(id);
     }
 
+    @GetMapping("/getJourney/user")
+    public List<Journey> getJourneyByUserId(@RequestParam UUID id){
+        return journeyService.getJourneyByUserId(id);
+    }
 }

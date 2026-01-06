@@ -42,17 +42,18 @@ public class SecurityConfig {
             // 3. Configure authorization rules
             .authorizeHttpRequests(auth -> auth
                 // Allow public access to login, auth callbacks, and WebSocket handshake
-                .requestMatchers(
-                        "/login",
-                        "/oauth2/**",       // CRITICAL: Permit standard OAuth2 endpoints
-                        "/authCallback/**", // Permit your custom success/failure URLs
-                        "/ws/**" ,
-                        "/index.html",
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**"  // Allow WebSocket connection
-                ).permitAll()
-                // All other requests must be authenticated
-                .anyRequest().authenticated()
+                // .requestMatchers(
+                //         "/login",
+                //         "/oauth2/**",       // CRITICAL: Permit standard OAuth2 endpoints
+                //         "/authCallback/**", // Permit your custom success/failure URLs
+                //         "/ws/**" ,
+                //         "/index.html",
+                //         "/swagger-ui/**",
+                //         "/v3/api-docs/**"  // Allow WebSocket connection
+                // ).permitAll()
+                // // All other requests must be authenticated
+                // .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             
             // 4. Configure OAuth2 Login
