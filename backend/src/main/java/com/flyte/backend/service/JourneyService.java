@@ -119,7 +119,7 @@ public class JourneyService {
                 }
 
                 Journey sameDestinationSlotJourney = journeyRepository
-                                .findBySourceAndSourceSlot(journey.getSource(), sourceSlot)
+                                .findByDestinationAndDestinationSlot(journey.getDestination(), destinationSlot)
                                 .stream().findFirst().orElse(null);
                 if (sameDestinationSlotJourney != null) {
                         newJourney.setDestinationRoom(sameDestinationSlotJourney.getDestinationRoom());
