@@ -28,7 +28,10 @@ public class JourneyService {
         private final RoomRepository roomRepository;
         private final int totalSlots;
 
-        public JourneyService(JourneyRepository journeyRepository, UserRepository userRepository,
+        private static final long EXPIRY_BUFFER_SECONDS = 24 * 60 * 60; // 24 Hours
+
+        public JourneyService(JourneyRepository journeyRepository,
+                        UserRepository userRepository,
                         RoomRepository roomRepository,
                         @Value("${app.num_slots}") int totalSlots) {
                 this.journeyRepository = journeyRepository;
@@ -38,130 +41,130 @@ public class JourneyService {
         }
 
         @Transactional
-        public Journey createJourney(CreateJourneyRequest journey) {
-                // 1. Validate User Existence
-                // UUID uuid = UUID.fromString(journey.getUserId);
-                User user = userRepository.findById(journey.getUserId())
-                                .orElseThrow(() -> new RuntimeException(
-                                                "User not found with UserID: " + journey.getUserId()));
+        public Journey createJourney(CreateJourneyRequest request) {
+                // 1. Validate User
+                User user = userRepository.findById(request.getUserId())
+                                .orElseThrow(() -> new RuntimeException("User not found: " + request.getUserId()));
 
-                // 2. Create and Populate Journey
+                // 2. Prepare Slots
+                SlotGenerator sourceSlotObj = new SlotGenerator(request.getDepartureTime(), this.totalSlots);
+                SlotGenerator destinationSlotObj = new SlotGenerator(request.getArrivalTime(), this.totalSlots);
+
+                // 3. Setup Journey Object
                 Journey newJourney = new Journey();
-                newJourney.setUser(user); // Set the retrieved, validated User object
-                newJourney.setSource(journey.getSource());
-                newJourney.setDestination(journey.getDestination());
-                newJourney.setDepartTime(journey.getDepartureTime());
-                newJourney.setArrivalTime(journey.getArrivalTime());
-                newJourney.setFlightNumber(journey.getFlightNumber());
+                newJourney.setUser(user);
+                newJourney.setSource(request.getSource());
+                newJourney.setDestination(request.getDestination());
+                newJourney.setDepartTime(request.getDepartureTime());
+                newJourney.setArrivalTime(request.getArrivalTime());
+                newJourney.setFlightNumber(request.getFlightNumber());
+                newJourney.setSourceSlot(sourceSlotObj.getSlotString());
+                newJourney.setDestinationSlot(destinationSlotObj.getSlotString());
 
-                SlotGenerator sourceSlotObj = new SlotGenerator(journey.getDepartureTime(), this.totalSlots);
-                SlotGenerator destinationSlotObj = new SlotGenerator(journey.getArrivalTime(), this.totalSlots);
-                String sourceSlot = sourceSlotObj.getSlotString();
-                String destinationSlot = destinationSlotObj.getSlotString();
+                // 4. Assign Rooms (Fixed Logic)
+                assignFlightRoom(newJourney, request, sourceSlotObj, destinationSlotObj);
+                assignSourceRoom(newJourney, request, sourceSlotObj, destinationSlotObj);
+                assignDestinationRoom(newJourney, request, destinationSlotObj);
 
-                newJourney.setSourceSlot(sourceSlot);
-                newJourney.setDestinationSlot(destinationSlot);
-
-                Journey sameFlightJourney = journeyRepository.findByFlightNumber(journey.getFlightNumber()).stream()
-                                .findFirst()
-                                .orElse(null);
-                if (sameFlightJourney != null) {
-                        newJourney.setFlightRoom(sameFlightJourney.getFlightRoom());
-                } else {
-                        Room flightRoom = new Room();
-                        flightRoom.setName(
-                                        journey.getSource() + "-" + journey.getDestination() + "-"
-                                                        + journey.getFlightNumber());
-                        flightRoom.setType(RoomType.FLIGHT);
-                        Instant expiryTime = destinationSlotObj.getSlotEnd().plusSeconds(24 * 60 * 60); // 2 hours after
-                                                                                                        // arrival
-                                                                                                        // slot end
-                        flightRoom.setExpiryTime(expiryTime);
-                        String description = String.format(
-                                        "Flight from %s to %s. Departs at %s and arrives at %s. The chat room will expire at %s.",
-                                        journey.getSource(), // e.g., "Hyderabad"
-                                        journey.getDestination(), // e.g., "Bangalore"
-                                        journey.getDepartureTime().toString(), // Formats to "7:30 PM on Sunday, October
-                                                                               // 5, 2025"
-                                        journey.getArrivalTime().toString()// Formats to "9:00 PM on Sunday, October 5,
-                                                                           // 2025"
-                                        , expiryTime.toString());
-                        flightRoom.setDescription(description);
-                        Room savedFlightRoom = roomRepository.save(flightRoom);
-                        newJourney.setFlightRoom(savedFlightRoom);
-                }
-                Journey sameSourceSlotJourney = journeyRepository
-                                .findBySourceAndSourceSlot(journey.getSource(), sourceSlot)
-                                .stream().findFirst().orElse(null);
-                if (sameSourceSlotJourney != null) {
-                        newJourney.setSourceRoom(sameSourceSlotJourney.getSourceRoom());
-                } else {
-                        Room sourceRoom = new Room();
-                        sourceRoom.setName(
-                                        "Room-" + journey.getSource() + "-" + journey.getFlightNumber());
-                        sourceRoom.setType(RoomType.SOURCE);
-                        Instant expiryTime = destinationSlotObj.getSlotEnd().plusSeconds(24 * 60 * 60); // 2 hours after
-                                                                                                        // arrival
-                                                                                                        // slot end
-                        sourceRoom.setExpiryTime(expiryTime);
-                        String description = String.format(
-                                        "Flight from %s to %s. Departs at %s and arrives at %s. The chat room will expire at %s.",
-                                        journey.getSource(), // e.g., "Hyderabad"
-                                        journey.getDestination(), // e.g., "Bangalore"
-                                        journey.getDepartureTime().toString(), // Formats to "7:30 PM on Sunday, October
-                                                                               // 5, 2025"
-                                        journey.getArrivalTime().toString()// Formats to "9:00 PM on Sunday, October 5,
-                                                                           // 2025"
-                                        , expiryTime.toString());
-                        sourceRoom.setDescription(description);
-                        Room savedsourceRoom = roomRepository.save(sourceRoom);
-                        newJourney.setSourceRoom(savedsourceRoom);
-                }
-
-                Journey sameDestinationSlotJourney = journeyRepository
-                                .findByDestinationAndDestinationSlot(journey.getDestination(), destinationSlot)
-                                .stream().findFirst().orElse(null);
-                if (sameDestinationSlotJourney != null) {
-                        newJourney.setDestinationRoom(sameDestinationSlotJourney.getDestinationRoom());
-                } else {
-                        Room destinationRoom = new Room();
-                        destinationRoom.setName(
-                                        "Room- " + journey.getDestination() + "-" + journey.getFlightNumber());
-                        destinationRoom.setType(RoomType.DESTINATION);
-                        Instant expiryTime = destinationSlotObj.getSlotEnd().plusSeconds(24 * 60 * 60); // 2 hours after
-                                                                                                        // arrival
-                                                                                                        // slot end
-                        destinationRoom.setExpiryTime(expiryTime);
-                        String description = String.format(
-                                        "Flight from %s to %s. Departs at %s and arrives at %s. The chat room will expire at %s.",
-                                        journey.getSource(), // e.g., "Hyderabad"
-                                        journey.getDestination(), // e.g., "Bangalore"
-                                        journey.getDepartureTime().toString(), // Formats to "7:30 PM on Sunday, October
-                                                                               // 5, 2025"
-                                        journey.getArrivalTime().toString()// Formats to "9:00 PM on Sunday, October 5,
-                                                                           // 2025"
-                                        , expiryTime.toString());
-                        destinationRoom.setDescription(description);
-                        Room saveddestinationRoom = roomRepository.save(destinationRoom);
-                        newJourney.setDestinationRoom(saveddestinationRoom);
-                }
-
-                // 3. Save and Return
-                ExampleMatcher matcher = ExampleMatcher.matching()
-                                .withIgnorePaths("id", "createdAt", "updatedAt");
-                Example<Journey> alreadyExistingSimilarJourney = Example.of(newJourney, matcher);
-                if (journeyRepository.exists(alreadyExistingSimilarJourney)) {
-                        throw new RuntimeException("Similar journey already exists.");
-                }
+                // 5. Check Duplicates & Save
+                validateJourneyDoesNotExist(newJourney);
                 return journeyRepository.save(newJourney);
         }
 
         public Journey getJourneyById(UUID journeyId) {
                 return journeyRepository.findById(journeyId)
-                                .orElseThrow(() -> new RuntimeException("Journey not found with ID: " + journeyId));
+                                .orElseThrow(() -> new RuntimeException("Journey not found: " + journeyId));
         }
 
         public List<Journey> getJourneyByUserId(UUID userId) {
                 return journeyRepository.findByUserId(userId);
+        }
+
+        // ===================================================================================
+        // HELPER METHODS
+        // ===================================================================================
+
+        private void assignFlightRoom(Journey journey, CreateJourneyRequest request, SlotGenerator sourceSlot,
+                        SlotGenerator destSlot) {
+                // Flight rooms ARE specific to the flight number.
+                Journey existing = journeyRepository
+                                .findByFlightNumberAndSourceSlotAndDestinationSlot(request.getFlightNumber(),
+                                                sourceSlot.getSlotString(), destSlot.getSlotString())
+                                .stream().findFirst().orElse(null);
+
+                if (existing != null) {
+                        journey.setFlightRoom(existing.getFlightRoom());
+                } else {
+                        String roomName = request.getSource() + "-" + request.getDestination() + "-"
+                                        + request.getFlightNumber();
+                        String description = String.format("Flight %s from %s to %s.",
+                                        request.getFlightNumber(), request.getSource(), request.getDestination());
+
+                        Room newRoom = createRoom(roomName, RoomType.FLIGHT, description, destSlot);
+                        journey.setFlightRoom(newRoom);
+                }
+        }
+
+        private void assignSourceRoom(Journey journey, CreateJourneyRequest request, SlotGenerator sourceSlot,
+                        SlotGenerator destSlot) {
+                // FIX: Look for any journey in this Source + Slot
+                Journey existing = journeyRepository
+                                .findBySourceAndSourceSlot(request.getSource(), sourceSlot.getSlotString())
+                                .stream().findFirst().orElse(null);
+
+                if (existing != null) {
+                        journey.setSourceRoom(existing.getSourceRoom());
+                } else {
+                        // FIX: Name is now GENERIC (Location + Slot), not Flight specific.
+                        String roomName = "Lounge-" + request.getSource() + "-" + sourceSlot.getReadableSlotString();
+                        String description = String.format("Travelers departing from %s during slot %s.",
+                                        request.getSource(), sourceSlot.getReadableSlotString());
+
+                        Room newRoom = createRoom(roomName, RoomType.SOURCE, description, destSlot);
+                        journey.setSourceRoom(newRoom);
+                }
+        }
+
+        private void assignDestinationRoom(Journey journey, CreateJourneyRequest request, SlotGenerator destSlot) {
+                // FIX: Look for any journey in this Destination + Slot
+                Journey existing = journeyRepository
+                                .findByDestinationAndDestinationSlot(request.getDestination(), destSlot.getSlotString())
+                                .stream().findFirst().orElse(null);
+
+                if (existing != null) {
+                        journey.setDestinationRoom(existing.getDestinationRoom());
+                } else {
+                        // FIX: Name is now GENERIC (Location + Slot)
+                        String roomName = "Lounge-" + request.getDestination() + "-" + destSlot.getReadableSlotString();
+                        String description = String.format("Travelers arriving at %s during slot %s.",
+                                        request.getDestination(), destSlot.getReadableSlotString());
+
+                        Room newRoom = createRoom(roomName, RoomType.DESTINATION, description, destSlot);
+                        journey.setDestinationRoom(newRoom);
+                }
+        }
+
+        // Unified Room Creator
+        private Room createRoom(String name, RoomType type, String description, SlotGenerator expiryReferenceSlot) {
+                Room room = new Room();
+                room.setName(name);
+                room.setType(type);
+
+                // Expiry is always based on the Destination time (arrival) + buffer
+                Instant expiryTime = expiryReferenceSlot.getSlotEnd().plusSeconds(EXPIRY_BUFFER_SECONDS);
+                room.setExpiryTime(expiryTime);
+                room.setDescription(description + " Room expires at " + expiryTime.toString());
+
+                return roomRepository.save(room);
+        }
+
+        private void validateJourneyDoesNotExist(Journey journey) {
+                ExampleMatcher matcher = ExampleMatcher.matching()
+                                .withIgnorePaths("id", "createdAt", "updatedAt");
+                Example<Journey> example = Example.of(journey, matcher);
+
+                if (journeyRepository.exists(example)) {
+                        throw new RuntimeException("Similar journey already exists.");
+                }
         }
 }

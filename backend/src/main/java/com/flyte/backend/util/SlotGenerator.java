@@ -1,7 +1,5 @@
 package com.flyte.backend.util;
 
-
-
 import lombok.Data;
 
 import java.time.Instant;
@@ -17,15 +15,18 @@ public class SlotGenerator {
     private final int slotDurationInHours;
     private Instant slotStart;
     private Instant slotEnd;
-    private String slotString;
-    // A reusable, thread-safe formatter for the date part of the slot string.
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy");
+    private String slotString; // Keeps the technical ID: S16T20D06012026
+
+    // Formatters for the human-readable string
+    private static final DateTimeFormatter ID_FORMATTER = DateTimeFormatter.ofPattern("ddMMyyyy");
+    private static final DateTimeFormatter HOUR_FORMATTER = DateTimeFormatter.ofPattern("ha"); // e.g. 4PM
+    private static final DateTimeFormatter DATE_SUFFIX = DateTimeFormatter.ofPattern("ddMMM"); // e.g. 06Jan
 
     public SlotGenerator(Instant instant, int totalSlots) {
 
         if (totalSlots <= 0 || 24 % totalSlots != 0) {
             throw new IllegalArgumentException(
-                    "The number of slots must be a positive integer that divides 24 perfectly (e.g., 1, 2, 3, 4, 6, 8, 12, 24).");
+                    "The number of slots must be a positive integer that divides 24 perfectly.");
         }
 
         this.totalSlots = totalSlots;
@@ -33,19 +34,32 @@ public class SlotGenerator {
 
         ZonedDateTime utcDateTime = instant.atZone(ZoneOffset.UTC);
 
-        // Get the hour of the day (0-23)
+        // Logic to calculate start/end hours
         int hour = utcDateTime.getHour();
-
-        // Calculate the starting and ending hours of the slot
         int startHour = (hour / slotDurationInHours) * slotDurationInHours;
-        int endHour = startHour + slotDurationInHours;
 
-        // Format the date part using our predefined formatter
-        String datePart = utcDateTime.format(DATE_FORMATTER);
-
-        this.setSlotString(String.format("S%02dT%02dD%s", startHour, endHour, datePart));
-        this.setSlotStart(utcDateTime.withHour(startHour % 24).withMinute(0).withSecond(0).withNano(0).toInstant());
+        // Set Instants
         ZonedDateTime startOfSlot = utcDateTime.withHour(startHour).truncatedTo(ChronoUnit.HOURS);
+        this.slotStart = startOfSlot.toInstant();
         this.slotEnd = startOfSlot.plusHours(slotDurationInHours).toInstant();
+
+        // Set Technical ID (Old logic preserved)
+        String datePart = utcDateTime.format(ID_FORMATTER);
+        // e.g. S16T20D06012026
+        this.setSlotString(String.format("S%02dT%02dD%s", startHour, startHour + slotDurationInHours, datePart));
+    }
+
+    /**
+     * NEW: Returns a human-friendly string for Room Names.
+     * Example Output: "4PM-8PM-06Jan"
+     */
+    public String getReadableSlotString() {
+        ZonedDateTime start = slotStart.atZone(ZoneOffset.UTC);
+        ZonedDateTime end = slotEnd.atZone(ZoneOffset.UTC);
+
+        return String.format("%s-%s-%s",
+                start.format(HOUR_FORMATTER),
+                end.format(HOUR_FORMATTER),
+                start.format(DATE_SUFFIX));
     }
 }
