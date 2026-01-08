@@ -62,7 +62,7 @@ public class JourneyService {
                 newJourney.setDestinationSlot(destinationSlotObj.getSlotString());
 
                 // 4. Assign Rooms (Fixed Logic)
-                assignFlightRoom(newJourney, request, destinationSlotObj);
+                assignFlightRoom(newJourney, request, sourceSlotObj, destinationSlotObj);
                 assignSourceRoom(newJourney, request, sourceSlotObj, destinationSlotObj);
                 assignDestinationRoom(newJourney, request, destinationSlotObj);
 
@@ -84,9 +84,12 @@ public class JourneyService {
         // HELPER METHODS
         // ===================================================================================
 
-        private void assignFlightRoom(Journey journey, CreateJourneyRequest request, SlotGenerator destSlot) {
+        private void assignFlightRoom(Journey journey, CreateJourneyRequest request, SlotGenerator sourceSlot,
+                        SlotGenerator destSlot) {
                 // Flight rooms ARE specific to the flight number.
-                Journey existing = journeyRepository.findByFlightNumber(request.getFlightNumber())
+                Journey existing = journeyRepository
+                                .findByFlightNumberAndSourceSlotAndDestinationSlot(request.getFlightNumber(),
+                                                sourceSlot.getSlotString(), destSlot.getSlotString())
                                 .stream().findFirst().orElse(null);
 
                 if (existing != null) {
