@@ -30,3 +30,6 @@ app:
   oauth2:
     redirect-uri: ${OAUTH2_REDIRECT_URI}
   num_slots: 4
+
+server:
+  port: ${PORT}
