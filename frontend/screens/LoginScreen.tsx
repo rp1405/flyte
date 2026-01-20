@@ -15,18 +15,17 @@ import {
   statusCodes,
 } from "@react-native-google-signin/google-signin";
 
-// REPLACE THIS WITH YOUR ACTUAL BACKEND URL (Use your machine's IP if testing on device, e.g., 192.168.1.5)
-const BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL+"/api/auth/google";
+// 1. IMPORT ASYNC STORAGE
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL + "/api/auth/google";
 
 export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     GoogleSignin.configure({
-      // IMPORTANT: Use the WEB CLIENT ID from Google Cloud Console here.
-      // This MUST match the 'googleClientId' you used in your Spring Boot Backend.
-      webClientId:
-        "846080902275-t1fmmtm2bgarbjtu34b8o2lr4s1uh7pu.apps.googleusercontent.com",
+      webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
       offlineAccess: true,
     });
   }, []);
@@ -34,16 +33,11 @@ export default function LoginScreen({ navigation }: any) {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      // 1. Check if play services are available
       await GoogleSignin.hasPlayServices();
-
-      // 2. Perform the native login
       const userInfo = await GoogleSignin.signIn();
-      console.log(userInfo);
       const idToken = userInfo.data?.idToken;
 
       if (idToken) {
-        // 3. Send token to your Spring Boot Backend
         await authenticateWithBackend(idToken);
       } else {
         throw new Error("No ID token returned");
@@ -78,8 +72,17 @@ export default function LoginScreen({ navigation }: any) {
       if (response.ok) {
         console.log("Backend Login Success!", data);
 
-        // TODO: Save data.token to SecureStore or AsyncStorage here
-        // await AsyncStorage.setItem('jwt_token', data.token);
+        // 2. SAVE DATA TO STORAGE
+        // We save the token as a plain string
+        // We save the user object by converting it to a string (JSON.stringify)
+        try {
+          await AsyncStorage.multiSet([
+            ["userToken", data.token],
+            ["userInfo", JSON.stringify(data.user)],
+          ]);
+        } catch (e) {
+          console.error("Error saving to storage", e);
+        }
 
         setLoading(false);
         navigation.navigate("MainTabs");
@@ -95,7 +98,6 @@ export default function LoginScreen({ navigation }: any) {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 justify-center items-center px-6">
-        {/* --- Logo Area --- */}
         <View className="items-center mb-10 w-full">
           <View className="w-16 h-16 bg-brand rounded-2xl justify-center items-center mb-4 shadow-lg shadow-brand/20">
             <Plane color={AppColors.iconWhite} size={32} />
@@ -108,13 +110,11 @@ export default function LoginScreen({ navigation }: any) {
           </Text>
         </View>
 
-        {/* --- Auth Card --- */}
         <View className="bg-surface p-8 rounded-3xl w-full border border-border shadow-xl shadow-black/50">
           <Text className="text-xl font-semibold text-center mb-8 text-text">
             Sign in to continue
           </Text>
 
-          {/* Google Button */}
           <TouchableOpacity
             onPress={handleGoogleLogin}
             disabled={loading}
@@ -139,14 +139,12 @@ export default function LoginScreen({ navigation }: any) {
             )}
           </TouchableOpacity>
 
-          {/* Divider */}
           <View className="flex-row items-center py-8">
             <View className="flex-1 h-[1px] bg-border" />
             <Text className="mx-4 text-subtext text-sm">Secure Login</Text>
             <View className="flex-1 h-[1px] bg-border" />
           </View>
 
-          {/* Footer Text */}
           <Text className="text-center text-xs text-subtext leading-5">
             By continuing, you agree to Flyte's{"\n"}
             <Text className="font-medium text-subtext underline">

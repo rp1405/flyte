@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,44 +6,31 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   Settings,
   Edit2,
-  Plane,
-  Users,
   ChevronRight,
   UserCog,
   Bell,
   ShieldCheck,
   HelpCircle,
   LogOut,
-  MapPin, // Kept for stats icon, removed from hero text
 } from "lucide-react-native";
 import { AppColors } from "../constants/colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// --- 1. Define TypeScript Interface based on Backend Model ---
-// This mirrors the fields in your Java User entity
+// --- 1. Define TypeScript Interface ---
 interface UserProfile {
-  id: string; // From BaseEntity
+  id: string;
   name: string;
   email: string;
   phoneNumber?: string;
   profilePictureUrl?: string;
   nickname?: string;
 }
-
-// --- 2. Dummy Data representing fetched user ---
-const DUMMY_USER: UserProfile = {
-  id: "usr_12345",
-  name: "Yuvraj Singh",
-  email: "yuvraj.singh@example.com",
-  phoneNumber: "+91 98765 43210",
-  // Using a stable seed for consistent avatar image
-  profilePictureUrl: "https://api.dicebear.com/7.x/avataaars/png?seed=Yuvraj2",
-  nickname: "yuvi_flyer",
-};
 
 // --- Types for Menu Items ---
 type MenuItemProps = {
@@ -84,17 +71,61 @@ const ProfileMenuItem = ({
   );
 };
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ navigation }: any) {
+  const [userData, setUserData] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // --- Load Data from Storage ---
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const jsonValue = await AsyncStorage.getItem("userInfo");
+      if (jsonValue != null) {
+        setUserData(JSON.parse(jsonValue));
+      }
+    } catch (e) {
+      console.error("Failed to load user profile", e);
+      Alert.alert("Error", "Could not load profile data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Logout Logic ---
   const handleLogout = () => {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Log Out",
         style: "destructive",
-        onPress: () => console.log("Logging out..."),
+        onPress: async () => {
+          try {
+            // 1. Clear all storage (Token + User Info)
+            await AsyncStorage.clear();
+            // 2. Navigate back to Login (Replace 'Login' with your actual Auth route name)
+            // Use .reset() or .replace() so they can't go back
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Login" }],
+            });
+          } catch (e) {
+            console.error("Logout failed", e);
+          }
+        },
       },
     ]);
   };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-background justify-center items-center">
+        <ActivityIndicator size="large" color={AppColors.brand} />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -111,15 +142,15 @@ export default function ProfileScreen() {
         contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* --- User Hero Section (UPDATED with DUMMY_USER data) --- */}
+        {/* --- User Hero Section --- */}
         <View className="items-center mt-4 px-6">
           {/* Avatar */}
           <View className="relative">
             <Image
               source={{
                 uri:
-                  DUMMY_USER.profilePictureUrl ||
-                  "https://via.placeholder.com/150", // Fallback if null
+                  userData?.profilePictureUrl ||
+                  "https://via.placeholder.com/150",
               }}
               className="w-28 h-28 rounded-full border-4 border-surface bg-background"
             />
@@ -129,52 +160,27 @@ export default function ProfileScreen() {
 
           {/* Name */}
           <Text className="text-2xl font-bold text-text mt-4 mb-1">
-            {DUMMY_USER.name}
+            {userData?.name || "Traveler"}
           </Text>
 
-          {/* Email and Nickname block instead of Location */}
+          {/* Email and Nickname */}
           <View className="items-center">
-            <Text className="text-subtext text-base">{DUMMY_USER.email}</Text>
-            {DUMMY_USER.nickname && (
+            <Text className="text-subtext text-base">
+              {userData?.email || "No email"}
+            </Text>
+            {userData?.nickname && (
               <Text className="text-brand font-medium text-sm mt-1">
-                @{DUMMY_USER.nickname}
+                @{userData.nickname}
               </Text>
             )}
           </View>
 
-          {/* Edit Profile Button (Preserved) */}
+          {/* Edit Profile Button */}
           <TouchableOpacity className="mt-6 bg-brand py-3 px-8 rounded-full flex-row items-center active:opacity-90">
             <Edit2 color="white" size={16} />
             <Text className="text-white font-semibold ml-2">Edit Profile</Text>
           </TouchableOpacity>
         </View>
-
-        {/* --- Stats Row (Placeholders - these likely need separate API calls) --- */}
-        {/* <View className="flex-row justify-between px-6 mt-8 gap-4">
-          <View className="flex-1 bg-surface p-4 rounded-2xl items-center border border-border shadow-sm">
-            <View className="bg-blue-900/30 p-2 rounded-full mb-2">
-              <Plane color={AppColors.brand} size={20} />
-            </View>
-            <Text className="font-bold text-xl text-text">12</Text>
-            <Text className="text-xs text-subtext font-medium">Flights</Text>
-          </View>
-          <View className="flex-1 bg-surface p-4 rounded-2xl items-center border border-border shadow-sm">
-            <View className="bg-orange-900/30 p-2 rounded-full mb-2">
-              <MapPin color="#f97316" size={20} />
-            </View>
-            <Text className="font-bold text-xl text-text">8</Text>
-            <Text className="text-xs text-subtext font-medium">Countries</Text>
-          </View>
-          <View className="flex-1 bg-surface p-4 rounded-2xl items-center border border-border shadow-sm">
-            <View className="bg-purple-900/30 p-2 rounded-full mb-2">
-              <Users color="#a855f7" size={20} />
-            </View>
-            <Text className="font-bold text-xl text-text">45</Text>
-            <Text className="text-xs text-subtext font-medium">
-              Connections
-            </Text>
-          </View>
-        </View> */}
 
         {/* --- Settings Menu Section --- */}
         <View className="mt-8 mx-6">
@@ -183,7 +189,6 @@ export default function ProfileScreen() {
           <View className="bg-surface rounded-3xl border border-border overflow-hidden">
             <ProfileMenuItem
               icon={UserCog}
-              // This section could show phone number in a detail screen
               label="Personal Information"
               onPress={() => console.log("Navigate to Personal Info edit")}
             />
@@ -205,7 +210,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* --- Log Out Button (Preserved) --- */}
+        {/* --- Log Out Button --- */}
         <TouchableOpacity
           onPress={handleLogout}
           activeOpacity={0.8}

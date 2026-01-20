@@ -22,7 +22,7 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtTokenProvider tokenProvider;
-    
+
     // You need your Google Client ID here to verify the token is truly for your app
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
@@ -37,9 +37,11 @@ public class AuthController {
         String idTokenString = payload.get("idToken");
 
         try {
+            System.out.println("Token: " + idTokenString);
             // 1. Verify the Google Token
             // This ensures the token was issued by Google and is for YOUR app
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new GsonFactory())
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(),
+                    new GsonFactory())
                     .setAudience(Collections.singletonList(googleClientId))
                     .build();
 
@@ -54,6 +56,7 @@ public class AuthController {
             String email = googlePayload.getEmail();
             String name = (String) googlePayload.get("name");
             String pictureUrl = (String) googlePayload.get("picture");
+            System.out.println("Name: " + name);
 
             // 3. Create or Update User in your DB (Logic from your Service)
             UserRequest userRequest = new UserRequest();
@@ -68,9 +71,8 @@ public class AuthController {
 
             // 5. Return the response (Token + User Info)
             return ResponseEntity.ok(Map.of(
-                "token", appToken,
-                "user", userResponse
-            ));
+                    "token", appToken,
+                    "user", userResponse));
 
         } catch (Exception e) {
             e.printStackTrace();
