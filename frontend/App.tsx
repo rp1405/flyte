@@ -43,7 +43,7 @@ function App() {
       <NavigationContainer>
         {/* 3. The Stack Navigator is now the root */}
         {/* Change initialRouteName to "Login" later when auth is ready */}
-        <Stack.Navigator initialRouteName="MainTabs">
+        <Stack.Navigator initialRouteName="Login">
           {/* The TabNavigator is just one screen within this stack */}
           <Stack.Screen
             name="MainTabs"
