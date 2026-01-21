@@ -1,9 +1,7 @@
-// App.tsx
-
 import { registerRootComponent } from "expo";
 import React from "react";
+import { View, ActivityIndicator } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-// 1. Import types for TS support
 import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
@@ -11,65 +9,87 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
 
-// Import Screens
-import LoginScreen from "./screens/LoginScreen";
-// import HomeScreen from "./screens/HomeScreen"; // Not needed here directly anymore
-import TabNavigator from "./screens/TabNavigator";
-import ChatDetailScreen from "./screens/ChatDetailScreen"; // Import the detail screen
+// --- IMPORTS ---
+import { AuthProvider, useAuth } from "./context/AuthContext"; // Ensure this path is correct
+import { AppColors } from "./constants/colors";
 
-// 2. Define the Parameter List for the ROOT Stack
-// This tells TypeScript what screens exist and what params they take.
+import LoginScreen from "./screens/LoginScreen";
+import TabNavigator from "./screens/TabNavigator";
+import ChatDetailScreen from "./screens/ChatDetailScreen";
+
+// --- TYPES ---
 export type RootStackParamList = {
-  MainTabs: undefined; // This names our TabNavigator "MainTabs"
+  MainTabs: undefined;
   Login: undefined;
-  // Define params for ChatDetail (matches what ChatDetailScreen expects)
   ChatDetail: {
     roomId: string;
     title?: string;
     type?: "group" | "direct";
     avatarUrl?: string;
+    userId: string;
   };
 };
 
-// Export the navigation prop type for use in other screens
 export type RootStackNavigationProp =
   NativeStackNavigationProp<RootStackParamList>;
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
+// --- 1. SEPARATE NAVIGATION LOGIC ---
+// We need a separate component here because we can only call 'useAuth'
+// INSIDE a component that is wrapped by <AuthProvider>
+function AppNavigator() {
+  const { user, isLoading } = useAuth();
+
+  // A. Loading State
+  // While checking storage, show a spinner (or a Splash Screen)
+  if (isLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: AppColors.background,
+        }}
+      >
+        <ActivityIndicator size="large" color={AppColors.brand} />
+      </View>
+    );
+  }
+
+  // B. Main Navigation
+  return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {user ? (
+          // --- AUTHENTICATED ROUTES ---
+          // If user exists, show the App Stack. Login screen is NOT rendered.
+          <>
+            <Stack.Screen name="MainTabs" component={TabNavigator} />
+            <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+          </>
+        ) : (
+          // --- GUEST ROUTES ---
+          // If no user, show ONLY the Login screen.
+          <Stack.Screen name="Login" component={LoginScreen} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+// --- 2. ROOT COMPONENT ---
 function App() {
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        {/* 3. The Stack Navigator is now the root */}
-        {/* Change initialRouteName to "Login" later when auth is ready */}
-        <Stack.Navigator initialRouteName="Login">
-          {/* The TabNavigator is just one screen within this stack */}
-          <Stack.Screen
-            name="MainTabs"
-            component={TabNavigator}
-            options={{ headerShown: false }}
-          />
-
-          {/* ChatDetailScreen is a SIBLING to MainTabs.
-              When navigated to, it sits ON TOP of the tabs. */}
-          <Stack.Screen
-            name="ChatDetail"
-            component={ChatDetailScreen}
-            // We set header false because ChatDetailScreen has its own custom header
-            options={{ headerShown: false }}
-          />
-
-          <Stack.Screen
-            name="Login"
-            component={LoginScreen}
-            options={{ headerShown: false }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
+      {/* Wrap the entire logic in the Provider */}
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
 
 export default App;
-registerRootComponent(App); // Not usually needed if using default Expo router entry, but keep if your setup requires it.
+registerRootComponent(App);

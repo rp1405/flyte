@@ -14,6 +14,7 @@ import {
   GoogleSignin,
   statusCodes,
 } from "@react-native-google-signin/google-signin";
+import { useAuth } from "@/context/AuthContext";
 
 // 1. IMPORT ASYNC STORAGE
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -22,6 +23,7 @@ const BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL + "/api/auth/google";
 
 export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
+  const { login } = useAuth();
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -72,17 +74,15 @@ export default function LoginScreen({ navigation }: any) {
       if (response.ok) {
         console.log("Backend Login Success!", data);
 
-        // 2. SAVE DATA TO STORAGE
-        // We save the token as a plain string
-        // We save the user object by converting it to a string (JSON.stringify)
-        try {
-          await AsyncStorage.multiSet([
-            ["userToken", data.token],
-            ["userInfo", JSON.stringify(data.user)],
-          ]);
-        } catch (e) {
-          console.error("Error saving to storage", e);
-        }
+       await login(data.token, data.user);
+        // try {
+        //   await AsyncStorage.multiSet([
+        //     ["userToken", data.token],
+        //     ["userInfo", JSON.stringify(data.user)],
+        //   ]);
+        // } catch (e) {
+        //   console.error("Error saving to storage", e);
+        // }
 
         setLoading(false);
         navigation.navigate("MainTabs");

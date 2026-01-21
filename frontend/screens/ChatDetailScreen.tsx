@@ -18,16 +18,14 @@ import { AppColors } from "../constants/colors";
 
 import { BackendMessage, UIMessage } from "../models/message";
 import { fetchRoomMessagesService } from "../services/MessageService";
-// --- 1. NEW IMPORT ---
 import { useChatWebSocket } from "../hooks/useChatWebsocket";
 
-// --- TEMPORARY: Replace with actual logged-in user ID ---
-const CURRENT_USER_ID = process.env.EXPO_PUBLIC_TEMP_LOGIN_USER;
-
 const ChatDetailScreen = () => {
+
+
   const navigation = useNavigation();
   const route = useRoute<any>();
-  const { roomId, title = "Chat", type = "group", avatarUrl } = route.params;
+  const { roomId, title = "Chat", type = "group", avatarUrl, userId } = route.params;
 
   const [inputText, setInputText] = useState("");
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -83,7 +81,7 @@ const ChatDetailScreen = () => {
   // --- 3. NEW: Initialize WebSocket Hook ---
   const { sendMessage } = useChatWebSocket(
     roomId,
-    CURRENT_USER_ID,
+    userId,
     onMessageReceived
   );
 
@@ -116,7 +114,7 @@ const ChatDetailScreen = () => {
     // --- WebSocket Implementation ---
     // Send the message over the socket.
     // We rely on the backend to broadcast it back to trigger onMessageReceived
-    sendMessage(textToSend, CURRENT_USER_ID, roomId);
+    sendMessage(textToSend, userId, roomId);
     setInputText("");
 
     // Optional: If you want "optimistic updates" (show immediately before server confirms),
@@ -131,7 +129,7 @@ const ChatDetailScreen = () => {
     item: UIMessage;
     index: number;
   }) => {
-    const isMe = item.senderId === CURRENT_USER_ID;
+    const isMe = item.senderId === userId;
     const isGroupChat = type === "group";
 
     // INVERTED LIST LOGIC:

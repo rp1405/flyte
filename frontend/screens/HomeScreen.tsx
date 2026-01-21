@@ -5,7 +5,8 @@ import {
   ScrollView,
   TextInput,
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -24,15 +25,19 @@ import DateTimePickerSection from "@/components/DateTimePickerSection";
 import AirportSearchModal from "@/components/AirportSearchModal";
 import { useNavigation, NavigationProp } from "@react-navigation/native";
 import { RootTabParamList } from "./TabNavigator";
-import {createJourneyService} from "../services/JourneyService"
-import {CreateJourneyRequestPayload} from "../models/journey"
+import { createJourneyService } from "../services/JourneyService";
+import { CreateJourneyRequestPayload } from "../models/journey";
+import { useAuth } from "@/context/AuthContext";
 
 type HomeScreenNavigationProp = NavigationProp<RootTabParamList>;
 
 export default function HomeScreen() {
-
   const navigation = useNavigation<HomeScreenNavigationProp>();
-
+  const { user } = useAuth();
+  if (!user) {
+    Alert.alert("Error", "You must be logged in to create a journey.");
+    return;
+  }
   const [sourceAirport, setSourceAirport] = useState<Airport | null>(null);
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
   const [flightNumber, setFlightNumber] = useState<string>("");
@@ -55,7 +60,7 @@ export default function HomeScreen() {
     ) {
       console.log(
         "Missing Details",
-        "Please fill in all locations, dates, and flight number before proceeding."
+        "Please fill in all locations, dates, and flight number before proceeding.",
       );
       return;
     }
@@ -69,14 +74,13 @@ export default function HomeScreen() {
       departureTime: departureDate.toISOString(),
       arrivalTime: arrivalDate.toISOString(),
       flightNumber: flightNumber.trim(),
-      userId: process.env.EXPO_PUBLIC_TEMP_LOGIN_USER
+      userId: user.id,
     };
 
     try {
-      setIsLoading(true); 
+      setIsLoading(true);
       const response = await createJourneyService(requestPayload);
       console.log("Journey created successfully:", response);
-
     } catch (error: any) {
       console.error("Creation Error:", error);
     } finally {

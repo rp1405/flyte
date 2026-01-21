@@ -1,52 +1,52 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 // Added needed icons
-import {
-  Search,
-  Edit3,
-  PlaneTakeoff,
-  PlaneLanding,
-  Plane,
-  Building2,
-  X,
-  AlertCircle,
-} from "lucide-react-native";
-import { AppColors } from "../constants/colors";
-import ChatItem, { ChatItemProps } from "../components/ChatItem";
 import { useNavigation } from "@react-navigation/native";
+import {
+  AlertCircle,
+  Building2,
+  Edit3,
+  Plane,
+  PlaneLanding,
+  PlaneTakeoff,
+  Search,
+  X,
+} from "lucide-react-native";
 import { RootStackNavigationProp } from "../App"; // Adjust path if necessary
+import ChatItem, { ChatItemProps } from "../components/ChatItem";
+import { AppColors } from "../constants/colors";
 
 // --- NEW IMPORTS FOR REAL DATA ---
+import { useAuth } from "@/context/AuthContext";
 import { useChats } from "../hooks/useChats";
 import { JourneyResponse, JourneyRoom } from "../models/journey";
 
 // Define the shape the UI component expects
 type ChatItemData = ChatItemProps["item"];
 
-// --- TEMPORARY: Hardcoded ID for testing until Auth is ready ---
-// Replace this with a real User UUID from your PostgreSQL database.
-const TEMP_USER_ID = process.env.EXPO_PUBLIC_TEMP_LOGIN_USER; //8262a8be-7c48-48f1-8149-d02e2d9d65c5
-
 export default function ChatsScreen() {
+  const { user } = useAuth();
+
+  if (!user) {
+    Alert.alert("Error", "You must be logged in to access this page.");
+    return;
+  }
   const navigation = useNavigation<RootStackNavigationProp>();
   const [searchText, setSearchText] = useState<string>("");
 
+  const userId = user?.id;
   // --- 1. FETCH REAL DATA VIA HOOK ---
-  const {
-    chats: rawJourneys,
-    isLoading,
-    error,
-    refetch,
-  } = useChats(TEMP_USER_ID);
+  const { chats: rawJourneys, isLoading, error, refetch } = useChats(userId);
 
   // --- Helper: Determine Icon Config based on room type ---
   const getIconConfig = useCallback((roomType: string) => {
@@ -171,6 +171,7 @@ export default function ChatsScreen() {
       title: item.title,
       type: item.type,
       avatarUrl: item.type === "direct" ? item.avatarUrl : undefined,
+      userId: userId,
     });
   };
 

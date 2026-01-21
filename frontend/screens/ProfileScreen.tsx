@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -20,17 +19,8 @@ import {
   LogOut,
 } from "lucide-react-native";
 import { AppColors } from "../constants/colors";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
-// --- 1. Define TypeScript Interface ---
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  phoneNumber?: string;
-  profilePictureUrl?: string;
-  nickname?: string;
-}
+// 1. Import the hook
+import { useAuth } from "../context/AuthContext";
 
 // --- Types for Menu Items ---
 type MenuItemProps = {
@@ -71,28 +61,11 @@ const ProfileMenuItem = ({
   );
 };
 
-export default function ProfileScreen({ navigation }: any) {
-  const [userData, setUserData] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // --- Load Data from Storage ---
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      const jsonValue = await AsyncStorage.getItem("userInfo");
-      if (jsonValue != null) {
-        setUserData(JSON.parse(jsonValue));
-      }
-    } catch (e) {
-      console.error("Failed to load user profile", e);
-      Alert.alert("Error", "Could not load profile data");
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function ProfileScreen() {
+  // 2. Get User and Logout function directly from Context
+  // We don't need 'navigation' prop for logout anymore because
+  // the App.tsx navigator will automatically switch screens when user becomes null.
+  const { user, logout } = useAuth();
 
   // --- Logout Logic ---
   const handleLogout = () => {
@@ -101,31 +74,12 @@ export default function ProfileScreen({ navigation }: any) {
       {
         text: "Log Out",
         style: "destructive",
-        onPress: async () => {
-          try {
-            // 1. Clear all storage (Token + User Info)
-            await AsyncStorage.clear();
-            // 2. Navigate back to Login (Replace 'Login' with your actual Auth route name)
-            // Use .reset() or .replace() so they can't go back
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Login" }],
-            });
-          } catch (e) {
-            console.error("Logout failed", e);
-          }
-        },
+        // 3. Simply call the context logout.
+        // This clears storage, updates state to null, and App.tsx automatically shows LoginScreen.
+        onPress: () => logout(),
       },
     ]);
   };
-
-  if (loading) {
-    return (
-      <SafeAreaView className="flex-1 bg-background justify-center items-center">
-        <ActivityIndicator size="large" color={AppColors.brand} />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -149,8 +103,7 @@ export default function ProfileScreen({ navigation }: any) {
             <Image
               source={{
                 uri:
-                  userData?.profilePictureUrl ||
-                  "https://via.placeholder.com/150",
+                  user?.profilePictureUrl || "https://via.placeholder.com/150",
               }}
               className="w-28 h-28 rounded-full border-4 border-surface bg-background"
             />
@@ -160,17 +113,20 @@ export default function ProfileScreen({ navigation }: any) {
 
           {/* Name */}
           <Text className="text-2xl font-bold text-text mt-4 mb-1">
-            {userData?.name || "Traveler"}
+            {user?.name || "Traveler"}
           </Text>
 
           {/* Email and Nickname */}
           <View className="items-center">
             <Text className="text-subtext text-base">
-              {userData?.email || "No email"}
+              {user?.email || "No email"}
             </Text>
-            {userData?.nickname && (
+
+            {/* Note: Ensure 'nickname' exists in your AuthContext User interface if you want to use it here. 
+                Otherwise, you might need to cast user as `any` or update the interface. */}
+            {(user as any)?.nickname && (
               <Text className="text-brand font-medium text-sm mt-1">
-                @{userData.nickname}
+                @{(user as any).nickname}
               </Text>
             )}
           </View>
