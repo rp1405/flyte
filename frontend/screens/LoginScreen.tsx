@@ -1,23 +1,22 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { Plane } from "lucide-react-native";
-import { AppColors } from "../constants/colors";
+import { useAuth } from "@/context/AuthContext";
 import {
   GoogleSignin,
   statusCodes,
 } from "@react-native-google-signin/google-signin";
-import { useAuth } from "@/context/AuthContext";
+import { Plane } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { AppColors } from "../constants/colors";
 
 // 1. IMPORT ASYNC STORAGE
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BACKEND_URL = process.env.EXPO_PUBLIC_API_BASE_URL + "/api/auth/google";
 
@@ -74,7 +73,7 @@ export default function LoginScreen({ navigation }: any) {
       if (response.ok) {
         console.log("Backend Login Success!", data);
 
-       await login(data.token, data.user);
+        await login(data.token, data.user);
         // try {
         //   await AsyncStorage.multiSet([
         //     ["userToken", data.token],
@@ -85,7 +84,7 @@ export default function LoginScreen({ navigation }: any) {
         // }
 
         setLoading(false);
-        navigation.navigate("MainTabs");
+        //navigation.navigate("MainTabs");
       } else {
         throw new Error(data.message || "Backend authentication failed");
       }
