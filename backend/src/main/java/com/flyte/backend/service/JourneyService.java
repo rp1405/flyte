@@ -88,8 +88,10 @@ public class JourneyService {
                         SlotGenerator destSlot) {
                 // Flight rooms ARE specific to the flight number.
                 Journey existing = journeyRepository
-                                .findByFlightNumberAndSourceSlotAndDestinationSlot(request.getFlightNumber(),
-                                                sourceSlot.getSlotString(), destSlot.getSlotString())
+                                .findByFlightNumberAndSourceAndSourceSlotAndDestinationAndDestinationSlot(
+                                                request.getFlightNumber(), request.getSource(),
+                                                sourceSlot.getSlotString(), request.getDestination(),
+                                                destSlot.getSlotString())
                                 .stream().findFirst().orElse(null);
 
                 if (existing != null) {
