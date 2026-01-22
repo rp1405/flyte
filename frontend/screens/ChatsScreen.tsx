@@ -10,7 +10,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-// Added needed icons
 import { useNavigation } from "@react-navigation/native";
 import {
   AlertCircle,
@@ -22,16 +21,13 @@ import {
   Search,
   X,
 } from "lucide-react-native";
-import { RootStackNavigationProp } from "../App"; // Adjust path if necessary
+import { RootStackNavigationProp } from "../App";
 import ChatItem, { ChatItemProps } from "../components/ChatItem";
 import { AppColors } from "../constants/colors";
-
-// --- NEW IMPORTS FOR REAL DATA ---
 import { useAuth } from "@/context/AuthContext";
 import { useChats } from "../hooks/useChats";
 import { JourneyResponse, JourneyRoom } from "../models/journey";
 
-// Define the shape the UI component expects
 type ChatItemData = ChatItemProps["item"];
 
 export default function ChatsScreen() {
@@ -104,6 +100,7 @@ export default function ChatsScreen() {
 
     // --- FIX: Create a Set to track IDs we have already seen ---
     const seenRoomIds = new Set<string>();
+    const now = new Date(); // Get current time for expiry check
 
     console.log("Processing journeys:", rawJourneys.length);
 
@@ -119,6 +116,15 @@ export default function ChatsScreen() {
       roomsToProcess.forEach((room) => {
         // Safety check: ensure room exists and has an ID
         if (!room || !room.id) return;
+
+        // --- NEW: Expiry Check ---
+        // If the room has an expiryTime and it is in the past, skip it.
+        if (room.expiryTime) {
+          const expiryDate = new Date(room.expiryTime);
+          if (expiryDate < now) {
+            return; // Skip rendering this room
+          }
+        }
 
         // --- FIX: Check if we have already processed this room ID ---
         if (seenRoomIds.has(room.id)) {

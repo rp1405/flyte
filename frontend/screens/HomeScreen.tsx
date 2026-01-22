@@ -28,6 +28,7 @@ import { RootTabParamList } from "./TabNavigator";
 import { createJourneyService } from "../services/JourneyService";
 import { CreateJourneyRequestPayload } from "../models/journey";
 import { useAuth } from "@/context/AuthContext";
+import { useConfig } from "../context/ConfigContext";
 
 type HomeScreenNavigationProp = NavigationProp<RootTabParamList>;
 
@@ -38,6 +39,11 @@ export default function HomeScreen() {
     Alert.alert("Error", "You must be logged in to create a journey.");
     return;
   }
+
+  const { isPageLoading } = useConfig();
+
+  if (isPageLoading) return <ActivityIndicator />;
+
   const [sourceAirport, setSourceAirport] = useState<Airport | null>(null);
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
   const [flightNumber, setFlightNumber] = useState<string>("");
@@ -106,7 +112,7 @@ export default function HomeScreen() {
       >
         {/* --- Greeting --- */}
         <View className="mt-3 mb-5 ml-2">
-          <Text className="text-2xl font-bold text-text">Hey, Yuvraj 👋</Text>
+          <Text className="text-2xl font-bold text-text">Hey, {user.name} 👋</Text>
           <Text className="text-subtext text-base">
             Where are you flying today?
           </Text>

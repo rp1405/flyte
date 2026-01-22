@@ -9,13 +9,13 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "./global.css";
 
-// --- IMPORTS ---
 import { AuthProvider, useAuth } from "./context/AuthContext"; // Ensure this path is correct
 import { AppColors } from "./constants/colors";
 
 import LoginScreen from "./screens/LoginScreen";
 import TabNavigator from "./screens/TabNavigator";
 import ChatDetailScreen from "./screens/ChatDetailScreen";
+import { ConfigProvider } from "./context/ConfigContext";
 
 // --- TYPES ---
 export type RootStackParamList = {
@@ -85,7 +85,9 @@ function App() {
     <SafeAreaProvider>
       {/* Wrap the entire logic in the Provider */}
       <AuthProvider>
-        <AppNavigator />
+        <ConfigProvider>
+          <AppNavigator />
+        </ConfigProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

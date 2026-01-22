@@ -10,7 +10,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Search, X, PlaneTakeoff } from "lucide-react-native";
 import { AppColors } from "../constants/colors";
-import { Airport, DUMMY_AIRPORTS } from "../models/airport";
+import { Airport } from "../models/airport";
+import { useConfig } from "../context/ConfigContext";
 
 // --- Interface Definition ---
 interface AirportSearchModalProps {
@@ -33,8 +34,10 @@ const AirportSearchModal = ({
   const [searchText, setSearchText] = useState("");
   const insets = useSafeAreaInsets();
 
+  const {airports} = useConfig();
+
   // Filter logic (Unchanged)
-  const filteredAirports = DUMMY_AIRPORTS.filter((airport) => {
+  const filteredAirports = airports.filter((airport) => {
     const searchLower = searchText.toLowerCase();
     return (
       airport.city.toLowerCase().includes(searchLower) ||
