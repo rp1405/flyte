@@ -4,19 +4,19 @@ import { ConfigService } from "../services/ConfigService";
 
 interface ConfigContextType {
   airports: Airport[];
-  isPageLoading: boolean;
+  isConfigLoading: boolean;
   refreshConfig: () => Promise<void>; // Added a refresh function just in case
 }
 
 const ConfigContext = createContext<ConfigContextType>({
   airports: [],
-  isPageLoading: true,
+  isConfigLoading: true,
   refreshConfig: async () => {},
 });
 
 export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
   const [airports, setAirports] = useState<Airport[]>([]);
-  const [isPageLoading, setIsPageLoading] = useState(true);
+  const [isConfigLoading, setIsConfigLoading] = useState(true);
 
   // Define the fetch logic as a reusable function
   const fetchConfig = async () => {
@@ -34,7 +34,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error("Critical config error:", error);
     } finally {
-      setIsPageLoading(false);
+      setIsConfigLoading(false);
     }
   };
 
@@ -45,7 +45,7 @@ export const ConfigProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <ConfigContext.Provider
-      value={{ airports, isPageLoading, refreshConfig: fetchConfig }}
+      value={{ airports, isConfigLoading, refreshConfig: fetchConfig }}
     >
       {children}
     </ConfigContext.Provider>

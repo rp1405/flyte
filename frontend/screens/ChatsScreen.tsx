@@ -1,3 +1,15 @@
+import { useAuth } from "@/context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
+import {
+  AlertCircle,
+  Building2,
+  Edit3,
+  Plane,
+  PlaneLanding,
+  PlaneTakeoff,
+  Search,
+  X,
+} from "lucide-react-native";
 import React, { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -10,38 +22,25 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import {
-  AlertCircle,
-  Building2,
-  Edit3,
-  Plane,
-  PlaneLanding,
-  PlaneTakeoff,
-  Search,
-  X,
-} from "lucide-react-native";
 import { RootStackNavigationProp } from "../App";
 import ChatItem, { ChatItemProps } from "../components/ChatItem";
 import { AppColors } from "../constants/colors";
-import { useAuth } from "@/context/AuthContext";
 import { useChats } from "../hooks/useChats";
 import { JourneyResponse, JourneyRoom } from "../models/journey";
 
 type ChatItemData = ChatItemProps["item"];
 
 export default function ChatsScreen() {
-  const { user } = useAuth();
+  const { user, isAuthLoading } = useAuth();
+  const navigation = useNavigation<RootStackNavigationProp>();
+  const [searchText, setSearchText] = useState<string>("");
 
+  // --- 1. FETCH REAL DATA VIA HOOK ---
   if (!user) {
     Alert.alert("Error", "You must be logged in to access this page.");
     return;
   }
-  const navigation = useNavigation<RootStackNavigationProp>();
-  const [searchText, setSearchText] = useState<string>("");
-
   const userId = user?.id;
-  // --- 1. FETCH REAL DATA VIA HOOK ---
   const { chats: rawJourneys, isLoading, error, refetch } = useChats(userId);
 
   // --- Helper: Determine Icon Config based on room type ---
