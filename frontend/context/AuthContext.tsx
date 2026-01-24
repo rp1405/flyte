@@ -17,7 +17,6 @@ interface AuthContextType {
   isLoading: boolean;
   login: (token: string, userData: User) => Promise<void>;
   logout: () => Promise<void>;
-  getAuthHeaders: () => { [key: string]: string }; // <--- Helper for API calls
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -77,17 +76,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Helper function to easily get headers for backend requests
-  const getAuthHeaders = () => {
-    return {
-      "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
-    };
-  };
-
   return (
     <AuthContext.Provider
-      value={{ user, token, isLoading, login, logout, getAuthHeaders }}
+      value={{ user, token, isLoading, login, logout }}
     >
       {children}
     </AuthContext.Provider>

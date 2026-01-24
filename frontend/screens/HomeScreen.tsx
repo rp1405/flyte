@@ -87,6 +87,12 @@ export default function HomeScreen() {
       setIsLoading(true);
       const response = await createJourneyService(requestPayload);
       console.log("Journey created successfully:", response);
+      setSourceAirport(null);
+      setDestAirport(null);
+      setFlightNumber("");
+      setDepartureDate(null);
+      setArrivalDate(null);
+      navigation.navigate("ChatsTab");
     } catch (error: any) {
       console.error("Creation Error:", error);
     } finally {
