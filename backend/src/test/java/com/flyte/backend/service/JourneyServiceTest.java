@@ -67,7 +67,8 @@ class JourneyServiceTest {
 
         // --- FIX STARTS HERE ---
         // Match the EXACT method calls from the Service
-        when(journeyRepository.findByFlightNumberAndSourceSlotAndDestinationSlot(anyString(), anyString(), anyString()))
+        when(journeyRepository.findByFlightNumberAndSourceAndSourceSlotAndDestinationAndDestinationSlot(anyString(),
+                anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(Collections.emptyList());
 
         when(journeyRepository.findBySourceAndSourceSlot(anyString(), anyString()))
@@ -130,8 +131,8 @@ class JourneyServiceTest {
         // --- FIX STARTS HERE ---
         // Mock the logic: If we search for this flight + slots, we find an existing
         // journey
-        when(journeyRepository.findByFlightNumberAndSourceSlotAndDestinationSlot(
-                eq("BA123"), anyString(), anyString())) // Use arguments from request
+        when(journeyRepository.findByFlightNumberAndSourceAndSourceSlotAndDestinationAndDestinationSlot(
+                eq("BA123"), anyString(), anyString(), anyString(), anyString())) // Use arguments from request
                 .thenReturn(List.of(jFlight));
 
         when(journeyRepository.findBySourceAndSourceSlot(eq("JFK"), anyString()))
