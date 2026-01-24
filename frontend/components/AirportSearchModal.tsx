@@ -1,21 +1,22 @@
+import { PlaneTakeoff, Search, X } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  TextInput,
   FlatList,
+  Modal,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Search, X, PlaneTakeoff } from "lucide-react-native";
 import { AppColors } from "../constants/colors";
-import { Airport, DUMMY_AIRPORTS } from "../models/airport";
+import { Airport } from "../models/airport";
 
 // --- Interface Definition ---
 interface AirportSearchModalProps {
   visible: boolean;
   onClose: () => void;
+  airports: Airport[];
   onSelect: (airport: Airport) => void;
   title: string;
   // --- NEW PROP ---
@@ -28,13 +29,14 @@ const AirportSearchModal = ({
   onClose,
   onSelect,
   title,
+  airports,
   disabledAirport, // Destructure the new prop
 }: AirportSearchModalProps) => {
   const [searchText, setSearchText] = useState("");
   const insets = useSafeAreaInsets();
 
   // Filter logic (Unchanged)
-  const filteredAirports = DUMMY_AIRPORTS.filter((airport) => {
+  const filteredAirports = airports.filter((airport) => {
     const searchLower = searchText.toLowerCase();
     return (
       airport.city.toLowerCase().includes(searchLower) ||

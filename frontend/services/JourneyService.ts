@@ -5,7 +5,6 @@ import {
 import { RequestExecutor } from "./RequestExecutor";
 
 const JOURNEYS_ENDPOINT = "/api/journeys/create";
-const TEMP_TOKEN = process.env.EXPO_PUBLIC_TEMP_AUTH_TOKEN;
 
 /**
  * Calls the backend API to create a new journey.
@@ -18,7 +17,7 @@ export const createJourneyService = async (
 ): Promise<JourneyResponse> => {
   
 
-  RequestExecutor.setAuthToken(TEMP_TOKEN);
+  //RequestExecutor.setAuthToken(TEMP_TOKEN);
 
   const apiResponse = await RequestExecutor.post<JourneyResponse>(
     JOURNEYS_ENDPOINT,

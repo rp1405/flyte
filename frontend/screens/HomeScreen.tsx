@@ -1,37 +1,41 @@
-import React, { useState } from "react";
+import AirportSearchModal from "@/components/AirportSearchModal";
+import DateTimePickerSection from "@/components/DateTimePickerSection";
+import LocationSelector from "@/components/LocationSelector";
+import { useAuth } from "@/context/AuthContext";
+import { NavigationProp, useNavigation } from "@react-navigation/native";
 import {
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import {
-  Plane,
-  MapPin,
-  Ticket,
   ArrowRight,
   Building2,
-  Users,
   ChevronRight,
+  MapPin,
+  Plane,
+  Ticket,
+  Users,
 } from "lucide-react-native";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
+import { useConfig } from "../context/ConfigContext";
 import { Airport } from "../models/airport";
-import LocationSelector from "@/components/LocationSelector";
-import DateTimePickerSection from "@/components/DateTimePickerSection";
-import AirportSearchModal from "@/components/AirportSearchModal";
-import { useNavigation, NavigationProp } from "@react-navigation/native";
+import { CreateJourneyRequestPayload } from "../models/journey";
+import { createJourneyService } from "../services/JourneyService";
 import { RootTabParamList } from "./TabNavigator";
-import {createJourneyService} from "../services/JourneyService"
-import {CreateJourneyRequestPayload} from "../models/journey"
 
 type HomeScreenNavigationProp = NavigationProp<RootTabParamList>;
 
 export default function HomeScreen() {
-
   const navigation = useNavigation<HomeScreenNavigationProp>();
+  const { user, isAuthLoading } = useAuth();
+  const { airports, isConfigLoading } = useConfig();
 
   const [sourceAirport, setSourceAirport] = useState<Airport | null>(null);
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
@@ -43,6 +47,13 @@ export default function HomeScreen() {
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [showDestModal, setShowDestModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  if (isConfigLoading || isAuthLoading) return <ActivityIndicator />;
+  if (!user) {
+    //TODO : Create a separate component for cases like this rather than using alerts
+    Alert.alert("Error", "You must be logged in to create a journey.");
+    return;
+  }
 
   const handleCreateJourney = async () => {
     // 1. Client-side Validation
@@ -69,14 +80,19 @@ export default function HomeScreen() {
       departureTime: departureDate.toISOString(),
       arrivalTime: arrivalDate.toISOString(),
       flightNumber: flightNumber.trim(),
-      userId: process.env.EXPO_PUBLIC_TEMP_LOGIN_USER
+      userId: user.id,
     };
 
     try {
-      setIsLoading(true); 
+      setIsLoading(true);
       const response = await createJourneyService(requestPayload);
       console.log("Journey created successfully:", response);
-
+      setSourceAirport(null);
+      setDestAirport(null);
+      setFlightNumber("");
+      setDepartureDate(null);
+      setArrivalDate(null);
+      navigation.navigate("ChatsTab");
     } catch (error: any) {
       console.error("Creation Error:", error);
     } finally {
@@ -102,7 +118,9 @@ export default function HomeScreen() {
       >
         {/* --- Greeting --- */}
         <View className="mt-3 mb-5 ml-2">
-          <Text className="text-2xl font-bold text-text">Hey, Yuvraj 👋</Text>
+          <Text className="text-2xl font-bold text-text">
+            Hey, {user.name} 👋
+          </Text>
           <Text className="text-subtext text-base">
             Where are you flying today?
           </Text>
@@ -259,6 +277,7 @@ export default function HomeScreen() {
         onClose={() => setShowSourceModal(false)}
         onSelect={(airport) => setSourceAirport(airport)}
         title="Select Source Airport"
+        airports={airports}
         disabledAirport={destAirport}
       />
       <AirportSearchModal
@@ -266,6 +285,7 @@ export default function HomeScreen() {
         onClose={() => setShowDestModal(false)}
         onSelect={(airport) => setDestAirport(airport)}
         title="Select Destination Airport"
+        airports={airports}
         disabledAirport={sourceAirport}
       />
     </SafeAreaView>

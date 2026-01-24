@@ -1,52 +1,47 @@
-import React, { useState, useMemo, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { useNavigation } from "@react-navigation/native";
 import {
-  View,
+  AlertCircle,
+  Building2,
+  Edit3,
+  Plane,
+  PlaneLanding,
+  PlaneTakeoff,
+  Search,
+  X,
+} from "lucide-react-native";
+import React, { useCallback, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  RefreshControl,
   Text,
   TextInput,
   TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-// Added needed icons
-import {
-  Search,
-  Edit3,
-  PlaneTakeoff,
-  PlaneLanding,
-  Plane,
-  Building2,
-  X,
-  AlertCircle,
-} from "lucide-react-native";
-import { AppColors } from "../constants/colors";
+import { RootStackNavigationProp } from "../App";
 import ChatItem, { ChatItemProps } from "../components/ChatItem";
-import { useNavigation } from "@react-navigation/native";
-import { RootStackNavigationProp } from "../App"; // Adjust path if necessary
-
-// --- NEW IMPORTS FOR REAL DATA ---
+import { AppColors } from "../constants/colors";
 import { useChats } from "../hooks/useChats";
 import { JourneyResponse, JourneyRoom } from "../models/journey";
 
-// Define the shape the UI component expects
 type ChatItemData = ChatItemProps["item"];
 
-// --- TEMPORARY: Hardcoded ID for testing until Auth is ready ---
-// Replace this with a real User UUID from your PostgreSQL database.
-const TEMP_USER_ID = process.env.EXPO_PUBLIC_TEMP_LOGIN_USER; //8262a8be-7c48-48f1-8149-d02e2d9d65c5
-
 export default function ChatsScreen() {
+  const { user, isAuthLoading } = useAuth();
   const navigation = useNavigation<RootStackNavigationProp>();
   const [searchText, setSearchText] = useState<string>("");
 
   // --- 1. FETCH REAL DATA VIA HOOK ---
-  const {
-    chats: rawJourneys,
-    isLoading,
-    error,
-    refetch,
-  } = useChats(TEMP_USER_ID);
+  if (!user) {
+    Alert.alert("Error", "You must be logged in to access this page.");
+    return;
+  }
+  const userId = user?.id;
+  const { chats: rawJourneys, isLoading, error, refetch } = useChats(userId);
 
   // --- Helper: Determine Icon Config based on room type ---
   const getIconConfig = useCallback((roomType: string) => {
@@ -104,6 +99,7 @@ export default function ChatsScreen() {
 
     // --- FIX: Create a Set to track IDs we have already seen ---
     const seenRoomIds = new Set<string>();
+    const now = new Date(); // Get current time for expiry check
 
     console.log("Processing journeys:", rawJourneys.length);
 
@@ -119,6 +115,15 @@ export default function ChatsScreen() {
       roomsToProcess.forEach((room) => {
         // Safety check: ensure room exists and has an ID
         if (!room || !room.id) return;
+
+        // --- NEW: Expiry Check ---
+        // If the room has an expiryTime and it is in the past, skip it.
+        if (room.expiryTime) {
+          const expiryDate = new Date(room.expiryTime);
+          if (expiryDate < now) {
+            return; // Skip rendering this room
+          }
+        }
 
         // --- FIX: Check if we have already processed this room ID ---
         if (seenRoomIds.has(room.id)) {
@@ -171,6 +176,7 @@ export default function ChatsScreen() {
       title: item.title,
       type: item.type,
       avatarUrl: item.type === "direct" ? item.avatarUrl : undefined,
+      userId: userId,
     });
   };
 
