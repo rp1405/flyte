@@ -25,9 +25,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
 import { useConfig } from "../context/ConfigContext";
-import { Airport } from "../models/airport";
-import { CreateJourneyRequestPayload } from "../models/journey";
 import { createJourneyService } from "../services/JourneyService";
+import { Airport } from "../types/airport";
+import { CreateJourneyRequestPayload } from "../types/journey";
 import { RootTabParamList } from "./TabNavigator";
 
 type HomeScreenNavigationProp = NavigationProp<RootTabParamList>;

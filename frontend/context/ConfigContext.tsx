@@ -1,4 +1,4 @@
-import { Airport } from "@/models/airport";
+import { Airport } from "@/types/airport";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { ConfigService } from "../services/ConfigService";
 

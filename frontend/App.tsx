@@ -4,9 +4,10 @@ import {
   NativeStackNavigationProp,
 } from "@react-navigation/native-stack";
 import { registerRootComponent } from "expo";
-import React from "react";
+import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { database as localDb } from "./db";
 import "./global.css";
 
 import { AppColors } from "./constants/colors";
@@ -81,6 +82,30 @@ function AppNavigator() {
 
 // --- 2. ROOT COMPONENT ---
 function App() {
+  useEffect(() => {
+    const debugWatermelon = async () => {
+      // 1. Fetch
+      const users = await localDb.get("users").query().fetch();
+      const rooms = await localDb.get("rooms").query().fetch();
+      const messages = await localDb.get("messages").query().fetch();
+
+      // 2. Log readable JSON
+      console.log("=======WATERMELON DB=========");
+      console.log(
+        "=== USERS ===",
+        users.map((u) => u._raw)
+      );
+      console.log(
+        "=== ROOMS ===",
+        rooms.map((r) => r._raw)
+      );
+      console.log(
+        "=== MESSAGES ===",
+        messages.map((m) => m._raw)
+      );
+    };
+    debugWatermelon();
+  }, []);
   return (
     <SafeAreaProvider>
       {/* Wrap the entire logic in the Provider */}

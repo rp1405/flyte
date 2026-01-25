@@ -9,5 +9,3 @@ export interface Airport {
   name: string; // e.g., Chhatrapati Shivaji Maharaj International Airport
   city: string; // e.g., Mumbai
 }
-
-

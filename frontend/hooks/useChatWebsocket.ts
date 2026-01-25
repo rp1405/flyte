@@ -6,7 +6,7 @@ const API_BASE_URL =
 
 import { Client, IMessage } from "@stomp/stompjs";
 import { useCallback, useEffect, useRef } from "react";
-import { BackendMessage, SendMessagePayload } from "../models/message";
+import { BackendMessage, SendMessagePayload } from "../types/message";
 
 // Helper to convert HTTP base URL to WS base URL
 // e.g., http://localhost:4000 -> ws://localhost:4000/ws/websocket

@@ -1,6 +1,6 @@
 // src/services/messageService.ts
+import { BackendMessage } from "../types/message";
 import { RequestExecutor } from "./RequestExecutor";
-import { BackendMessage } from "../models/message";
 
 // Adjust base path if needed, e.g., just "" if controller is at root /room
 const ROOM_MESSAGES_ENDPOINT = "/api/messages/room";

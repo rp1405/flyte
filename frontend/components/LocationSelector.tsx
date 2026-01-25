@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
-import { View, Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 // Make sure to adjust this import path if needed based on your project structure
-import { Airport } from "../models/airport";
+import { Airport } from "../types/airport";
 
 interface LocationSelectorProps {
   label: string;
@@ -19,10 +19,12 @@ const LocationSelector = ({
   onPress,
 }: LocationSelectorProps) => {
   return (
-    <View className={`z-10 ${label=="TO"?"mt-2":""} `}>
+    <View className={`z-10 ${label == "TO" ? "mt-2" : ""} `}>
       <View className="flex-row mb-2">
         <View className="w-10" />
-        <Text className="flex-1 text-xs font-medium text-subtext ml-2">{label}</Text>
+        <Text className="flex-1 text-xs font-medium text-subtext ml-2">
+          {label}
+        </Text>
       </View>
 
       <View className="flex-row items-center">

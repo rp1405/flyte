@@ -5,7 +5,6 @@ import { JourneyRoom, JourneyUser } from "./journey";
 // Assuming you already have User defined in 'src/models/user.ts'
 // If not, define a basic shape here:
 
-
 // Matches com.flyte.backend.enums.MediaType
 export type MediaType = "TEXT" | "IMAGE" | "VIDEO" | "FILE";
 

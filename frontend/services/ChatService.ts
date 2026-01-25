@@ -1,6 +1,6 @@
 import { RequestExecutor } from "./RequestExecutor";
 // Import the model definition for the response
-import { JourneyResponse } from "../models/journey";
+import { JourneyResponse } from "../types/journey";
 
 // Define the endpoint relative to the base URL.
 // Assuming your JourneyController still has @RequestMapping("/api/journeys") at the class level.

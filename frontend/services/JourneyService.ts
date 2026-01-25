@@ -1,7 +1,4 @@
-import {
-  CreateJourneyRequestPayload,
-  JourneyResponse,
-} from "../models/journey";
+import { CreateJourneyRequestPayload, JourneyResponse } from "../types/journey";
 import { RequestExecutor } from "./RequestExecutor";
 
 const JOURNEYS_ENDPOINT = "/api/journeys/create";
@@ -15,13 +12,11 @@ const JOURNEYS_ENDPOINT = "/api/journeys/create";
 export const createJourneyService = async (
   payload: CreateJourneyRequestPayload
 ): Promise<JourneyResponse> => {
-  
-
   //RequestExecutor.setAuthToken(TEMP_TOKEN);
 
   const apiResponse = await RequestExecutor.post<JourneyResponse>(
     JOURNEYS_ENDPOINT,
-    payload 
+    payload
   );
 
   if (!apiResponse.success) {

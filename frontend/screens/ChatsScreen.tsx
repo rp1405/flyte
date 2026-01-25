@@ -26,7 +26,7 @@ import { RootStackNavigationProp } from "../App";
 import ChatItem, { ChatItemProps } from "../components/ChatItem";
 import { AppColors } from "../constants/colors";
 import { useChats } from "../hooks/useChats";
-import { JourneyResponse, JourneyRoom } from "../models/journey";
+import { JourneyResponse, JourneyRoom } from "../types/journey";
 
 type ChatItemData = ChatItemProps["item"];
 

@@ -16,16 +16,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
 
-import { BackendMessage, UIMessage } from "../models/message";
-import { fetchRoomMessagesService } from "../services/MessageService";
 import { useChatWebSocket } from "../hooks/useChatWebsocket";
+import { fetchRoomMessagesService } from "../services/MessageService";
+import { BackendMessage, UIMessage } from "../types/message";
 
 const ChatDetailScreen = () => {
-
-
   const navigation = useNavigation();
   const route = useRoute<any>();
-  const { roomId, title = "Chat", type = "group", avatarUrl, userId } = route.params;
+  const {
+    roomId,
+    title = "Chat",
+    type = "group",
+    avatarUrl,
+    userId,
+  } = route.params;
 
   const [inputText, setInputText] = useState("");
   const [messages, setMessages] = useState<UIMessage[]>([]);
@@ -79,11 +83,7 @@ const ChatDetailScreen = () => {
   );
 
   // --- 3. NEW: Initialize WebSocket Hook ---
-  const { sendMessage } = useChatWebSocket(
-    roomId,
-    userId,
-    onMessageReceived
-  );
+  const { sendMessage } = useChatWebSocket(roomId, userId, onMessageReceived);
 
   // --- EFFECT: Fetch initial messages on mount (UNCHANGED) ---
   useEffect(() => {
@@ -134,7 +134,7 @@ const ChatDetailScreen = () => {
 
     // INVERTED LIST LOGIC:
     // The "next" message visually (below current) is actually at index + 1
-    const nextMessage = messages[index+1];
+    const nextMessage = messages[index + 1];
     const isSameSenderAsPrevious = nextMessage?.senderId === item.senderId;
 
     return (
