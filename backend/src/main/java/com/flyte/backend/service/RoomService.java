@@ -10,11 +10,13 @@ import com.flyte.backend.repository.RoomRepository;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.time.Instant;
 
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
@@ -51,37 +53,44 @@ public class RoomService {
     public List<RoomWithMessages> getRoomsAndMessagesByUserId(UUID userId) {
         List<Journey> journeysByUser = journeyService.getJourneyByUserId(userId);
 
-        // 1. Collect IDs using a simple loop
-        Set<UUID> allRoomIds = new HashSet<>();
-        for (Journey journey : journeysByUser) {
-            if (journey.getSourceRoom() != null)
-                allRoomIds.add(journey.getSourceRoom().getId());
-            if (journey.getDestinationRoom() != null)
-                allRoomIds.add(journey.getDestinationRoom().getId());
-            if (journey.getFlightRoom() != null)
-                allRoomIds.add(journey.getFlightRoom().getId());
-        }
-
-        // 2. Fetch all messages at once
-        Map<UUID, List<Message>> allMessagesMap = messageService.getMessagesByRoomIds(new ArrayList<>(allRoomIds));
-
-        // 3. Map them back to the result list
-        List<RoomWithMessages> roomsAndMessages = new ArrayList<>();
+        // 1. Collect Unique Rooms using a Map (Key: ID, Value: Room Object)
+        // Using a Map ensures that if we see the same Room ID twice, we overwrite it,
+        // preventing duplicates.
+        Map<UUID, Room> uniqueRoomsMap = new HashMap<>();
 
         for (Journey journey : journeysByUser) {
-            // Helper list for this specific journey
-            List<Room> currentRooms = Arrays.asList(journey.getSourceRoom(), journey.getDestinationRoom(),
+            List<Room> currentRooms = Arrays.asList(
+                    journey.getSourceRoom(),
+                    journey.getDestinationRoom(),
                     journey.getFlightRoom());
 
             for (Room room : currentRooms) {
                 if (room != null) {
-                    RoomWithMessages item = new RoomWithMessages();
-                    item.setRoom(room);
-                    item.setMessages(allMessagesMap.getOrDefault(room.getId(), new ArrayList<>()));
-                    roomsAndMessages.add(item);
+                    // Check expiry logic immediately
+                    if (room.getExpiryTime() != null && Instant.now().isAfter(room.getExpiryTime())) {
+                        continue;
+                    }
+                    // Put into map: This acts as the deduplication filter
+                    uniqueRoomsMap.put(room.getId(), room);
                 }
             }
         }
+
+        // 2. Fetch all messages at once using the unique IDs
+        Map<UUID, List<Message>> allMessagesMap = messageService
+                .getMessagesByRoomIds(new ArrayList<>(uniqueRoomsMap.keySet()));
+
+        // 3. Build the final response list iterating over the UNIQUE rooms only
+        List<RoomWithMessages> roomsAndMessages = new ArrayList<>();
+
+        for (Room room : uniqueRoomsMap.values()) {
+            RoomWithMessages item = new RoomWithMessages();
+            item.setRoom(room);
+            // Safely get messages or empty list
+            item.setMessages(allMessagesMap.getOrDefault(room.getId(), new ArrayList<>()));
+            roomsAndMessages.add(item);
+        }
+
         return roomsAndMessages;
     }
 }

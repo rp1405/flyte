@@ -61,6 +61,33 @@ export class SyncService {
       const apiResponseList = response.data;
       if (apiResponseList.length === 0) return;
 
+      // 🕵️ DUPLICATE DETECTOR
+      // ---------------------------------------------------------
+      const seenIds = new Set<string>();
+      const duplicateIds: string[] = [];
+
+      apiResponseList.forEach((item) => {
+        if (seenIds.has(item.room.id)) {
+          duplicateIds.push(item.room.name);
+        } else {
+          seenIds.add(item.room.id);
+        }
+      });
+
+      if (duplicateIds.length > 0) {
+        console.warn(
+          `⚠️ DUPLICATE ROOM IDs DETECTED IN API RESPONSE:\n` +
+            `Count: ${duplicateIds.length}\n` +
+            `IDs: ${duplicateIds.join(", ")}`
+        );
+        console.log(
+          "Info: The sync service will automatically handle these by using the last occurrence."
+        );
+      } else {
+        console.log("✅ Data Check Passed: No duplicate Room IDs found.");
+      }
+      // ---------------------------------------------------------
+
       // Extract all Room IDs from the nested 'room' object
       const roomIdsToSync = apiResponseList.map((item) => item.room.id);
 

@@ -24,7 +24,8 @@ export interface JourneyRoom {
   description: string;
   // You can make type more specific (e.g., 'SOURCE' | 'FLIGHT') if values are fixed
   type: string;
-  expiryTime: string; // ISO timestamp string for expiry
+  expiryTime: string; 
+  lastMessageTimestamp: string; // Can be null based on example
 }
 
 // --- MAIN INTERFACES ---

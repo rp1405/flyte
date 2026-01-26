@@ -91,7 +91,7 @@ export const useChatWebSocket = (
       }
       stompClientRef.current = null;
     };
-  }, [roomId, currentUserId, onMessageReceived]);
+  }, [roomId, currentUserId]);
 
   // Function to publish messages to the backend
   const sendMessage = useCallback(

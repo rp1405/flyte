@@ -1,6 +1,6 @@
 import { RouteProp, useNavigation } from "@react-navigation/native";
 import { ChevronLeft, MoreVertical, Send } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -20,6 +20,7 @@ import { database } from "../db/index"; // Your DB Instance
 import Message from "../db/models/Message"; // Your Message Model
 import Room from "../db/models/Room"; // Your Room Model
 
+import MessageBubble from "../components/MessageBubble";
 import { useChatWebSocket } from "../hooks/useChatWebsocket";
 import { BackendMessage } from "../types/message";
 
@@ -85,52 +86,22 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
     // Note: Ideally, you also optimistically write to DB here for instant UI
   };
 
-  const renderMessageItem = ({
-    item,
-    index,
-  }: {
-    item: Message;
-    index: number;
-  }) => {
-    const isMe = item.senderId === userId;
-    // const isGroupChat = type === "SOURCE" || type === "DESTINATION" || type === "FLIGHT";
+  const renderMessageItem = useCallback(
+    ({ item, index }: { item: Message; index: number }) => {
+      const isMe = item.senderId === userId;
+      const nextMessage = messages[index + 1];
+      const isSameSenderAsPrevious = nextMessage?.senderId === item.senderId;
 
-    // Since 'messages' is now a WatermelonDB object, accessing index + 1 is fine
-    const nextMessage = messages[index + 1];
-    const isSameSenderAsPrevious = nextMessage?.senderId === item.senderId;
-
-    // Helper to format time from timestamp
-    console.log("Message object:", item);
-    const timeStr = new Date(item.timestamp).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    return (
-      <View
-        className={`my-1 px-4 w-full flex-row ${isMe ? "justify-end" : "justify-start"}`}
-        style={{ marginTop: isSameSenderAsPrevious ? 4 : 12 }}
-      >
-        <View
-          className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-            isMe
-              ? "bg-brand rounded-tr-none"
-              : "bg-surface border border-border rounded-tl-none"
-          }`}
-        >
-          {/* You can add Sender Name logic here if needed */}
-          <Text className={`text-base ${isMe ? "text-white" : "text-text"}`}>
-            {item.text}
-          </Text>
-          <Text
-            className={`text-[10px] text-right mt-1 ${isMe ? "text-white/70" : "text-subtext"}`}
-          >
-            {timeStr}
-          </Text>
-        </View>
-      </View>
-    );
-  };
+      return (
+        <MessageBubble
+          item={item}
+          isMe={isMe}
+          isSameSenderAsPrevious={isSameSenderAsPrevious}
+        />
+      );
+    },
+    [messages, userId]
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
