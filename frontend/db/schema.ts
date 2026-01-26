@@ -19,9 +19,10 @@ export const schema = appSchema({
         { name: "name", type: "string" },
         { name: "description", type: "string" },
         { name: "type", type: "string" },
-        { name: "expiry_time", type: "string" }, // Changed to string as per your interface (ISO)
+        { name: "expiry_time", type: "number" }, // Changed to string as per your interface (ISO)
         { name: "created_at", type: "number" },
         { name: "updated_at", type: "number" },
+        { name: "last_message_timestamp", type: "number" },
       ],
     }),
     tableSchema({

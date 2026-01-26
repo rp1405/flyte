@@ -1,4 +1,4 @@
-import { Model, Query } from "@nozbe/watermelondb";
+import { Model, Q, Query } from "@nozbe/watermelondb";
 import { children, text } from "@nozbe/watermelondb/decorators";
 import Message from "./Message";
 
@@ -17,7 +17,14 @@ export default class Room extends Model {
   @text("expiry_time") expiryTime!: string;
   @text("created_at") createdAt!: string;
   @text("updated_at") updatedAt!: string;
+  @text("last_message_timestamp") lastMessageTimestamp!: string;
 
   // Relationship: Returns a Query object that resolves to Message[]
-  @children("messages") messages!: Query<Message>;
+  @children("messages") _messages!: Query<Message>;
+
+  get messages() {
+    return this._messages.extend(
+      Q.sortBy("timestamp", "desc") // Enforce: Newest First
+    );
+  }
 }

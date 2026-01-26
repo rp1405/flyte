@@ -1,15 +1,7 @@
+import UserData from "@/types/UserData";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { database as localDb } from "../db"; // Your initialized WatermelonDB instance
 import User from "../db/models/User"; // Rename import to avoid clash with interface
-
-// 1. Types
-// Note: We use the Shape of the user for the UI, but we store it in the DB model
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-  profilePictureUrl?: string;
-}
 
 interface AuthContextType {
   user: UserData | null;

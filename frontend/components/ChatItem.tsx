@@ -1,56 +1,104 @@
+import Message from "@/db/models/Message";
+import Room from "@/db/models/Room";
+import { Q } from "@nozbe/watermelondb";
+import { withObservables } from "@nozbe/watermelondb/react";
+import {
+  Building2,
+  Plane,
+  PlaneLanding,
+  PlaneTakeoff,
+} from "lucide-react-native";
 import React from "react";
-import { View, Text, TouchableOpacity, Image } from "react-native";
-// AppColors might still be needed by the avatar rendering if it uses brand colors
-// import { AppColors } from "../constants/colors";
+import { Text, TouchableOpacity, View } from "react-native";
+import { AppColors } from "../constants/colors"; // Ensure this path is correct
 
-// Define the shape of the data this component expects.
+// 1. UPDATED PROPS: Expect the DB Models instead of plain JSON
 export interface ChatItemProps {
-  item: {
-    id: string;
-    type: "group" | "direct";
-    title: string;
-    lastMessage: string;
-    time: string;
-    // We keep unreadCount in the interface so the parent doesn't break,
-    // but we no longer use it in the rendering below.
-    unreadCount: number;
-    avatarUrl?: string;
-    groupIconConfig?: {
-      icon: React.ElementType;
-      bgColorBg: string;
-      iconColorHex: string;
-    };
-  };
-  // Standard prop for handling taps on list items
-  onPress: () => void;
+  room: Room;
+  latestMessage?: Message; // Injected by withObservables
+  onPress: (room: Room) => void;
 }
 
-const ChatItem = ({ item, onPress }: ChatItemProps) => {
+const ChatItem = ({ room, latestMessage, onPress }: ChatItemProps) => {
+  // --- HELPER 1: Extract Data safely ---
+  const title = room.name || "Unknown Room";
+  const messageText = latestMessage ? latestMessage.text : "No messages yet";
 
-    const renderAvatar = () => {
-    if (item.type === "group" && item.groupIconConfig) {
-      const Icon = item.groupIconConfig.icon;
+  // Time Priority: Message Time -> Room Update Time -> Current Time
+  // We use the timestamp number directly from the model
+  const timeSource = latestMessage?.timestamp || room.updatedAt;
+  const timeDisplay = timeSource
+    ? new Date(timeSource).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "";
+
+  // --- HELPER 2: Icon Logic (Moved here to keep it self-contained) ---
+  const renderAvatar = () => {
+    // If it is a group (Room types usually map to groups in your logic)
+    // You can adjust this condition if you have 'direct' types in your DB
+    if (true) {
+      const typeUpper = room.type?.toUpperCase();
+      let iconConfig;
+
+      switch (typeUpper) {
+        case "SOURCE":
+          iconConfig = {
+            icon: PlaneTakeoff,
+            bgColor: "bg-blue-900/30",
+            color: AppColors.brand,
+          };
+          break;
+        case "DESTINATION":
+          iconConfig = {
+            icon: PlaneLanding,
+            bgColor: "bg-orange-900/30",
+            color: "#f97316",
+          };
+          break;
+        case "FLIGHT":
+          iconConfig = {
+            icon: Plane,
+            bgColor: "bg-purple-900/30",
+            color: "#9333ea",
+          };
+          break;
+        default:
+          iconConfig = {
+            icon: Building2,
+            bgColor: "bg-slate-800/30",
+            color: AppColors.subtext,
+          };
+          break;
+      }
+
+      const Icon = iconConfig.icon;
+
       return (
         <View
-          className={`w-14 h-14 ${item.groupIconConfig.bgColorBg} rounded-full items-center justify-center`}
+          className={`w-14 h-14 ${iconConfig.bgColor} rounded-full items-center justify-center`}
         >
-          <Icon color={item.groupIconConfig.iconColorHex} size={24} />
+          <Icon color={iconConfig.color} size={24} />
         </View>
       );
-    } else {
+    }
+    // Fallback for direct messages (if you add avatarUrl to Room schema later)
+    /* else {
       return (
         <Image
-          source={{ uri: item.avatarUrl }}
+          source={{ uri: room.avatarUrl }} 
           className="w-14 h-14 rounded-full border border-border bg-surface"
         />
       );
     }
+    */
   };
 
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      onPress={onPress}
+      onPress={() => onPress(room)}
       className="flex-row items-center p-4 border-b border-border/40 active:bg-surface"
     >
       {/* Left: Avatar */}
@@ -60,27 +108,33 @@ const ChatItem = ({ item, onPress }: ChatItemProps) => {
       <View className="flex-1 ml-4 justify-center">
         <View className="flex-row justify-between items-baseline">
           <Text className="text-lg font-bold text-text mb-1" numberOfLines={1}>
-            {item.title}
+            {title}
           </Text>
         </View>
 
-        {/* UPDATED: Removed conditional styling based on unreadCount */}
         <Text className="text-base text-subtext font-normal" numberOfLines={1}>
-          {/* UPDATED: Removed conditional "New:" prefix */}
-          {item.lastMessage}
+          {messageText}
         </Text>
       </View>
 
       {/* Right: Time */}
-      {/* UPDATED: Changed justify-between to justify-center so time centers vertically now that the badge is gone */}
       <View className="ml-2 items-end justify-center h-12 py-1">
-        {/* UPDATED: Removed conditional styling based on unreadCount */}
-        <Text className="text-xs text-subtext">{item.time}</Text>
-
-        {/* UPDATED: Removed the entire unread badge condition block here */}
+        <Text className="text-xs text-subtext">{timeDisplay}</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-export default ChatItem;
+// 2. THE OBSERVABLE WRAPPER
+// This connects the component to the database.
+const enhance = withObservables(["room"], ({ room }) => ({
+  room: room.observe(), // Watch the Room itself (for name changes)
+
+  // Watch the Messages relation to get the preview text live
+  latestMessage: room.messages
+    .extend(Q.sortBy("timestamp", Q.desc), Q.take(1))
+    .observe()
+    .map((messages: Message[]) => messages[0]), // Extract the first item
+}));
+
+export default enhance(ChatItem);
