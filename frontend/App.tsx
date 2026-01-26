@@ -9,14 +9,13 @@ import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { database as localDb } from "./db";
 import "./global.css";
-
 import { AppColors } from "./constants/colors";
-import { AuthProvider, useAuth } from "./context/AuthContext"; // Ensure this path is correct
-
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ConfigProvider } from "./context/ConfigContext";
 import ChatDetailScreen from "./screens/ChatDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
 import TabNavigator from "./screens/TabNavigator";
+import { SyncService } from "./services/SyncService";
 
 // --- TYPES ---
 export type RootStackParamList = {
@@ -58,6 +57,13 @@ function AppNavigator() {
       </View>
     );
   }
+
+  // Example usage in HomeScreen.tsx
+  useEffect(() => {
+    if (user?.id) {
+      SyncService.syncUserChatData(user.id);
+    }
+  }, [user]);
 
   // B. Main Navigation
   return (
