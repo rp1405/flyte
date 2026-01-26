@@ -25,9 +25,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
 import { useConfig } from "../context/ConfigContext";
-import { Airport } from "../models/airport";
-import { CreateJourneyRequestPayload } from "../models/journey";
-import { createJourneyService } from "../services/JourneyService";
+import { JourneyService } from "../services/JourneyService";
+import { Airport } from "../types/airport";
+import { CreateJourneyRequestPayload } from "../types/journey";
 import { RootTabParamList } from "./TabNavigator";
 
 type HomeScreenNavigationProp = NavigationProp<RootTabParamList>;
@@ -85,7 +85,7 @@ export default function HomeScreen() {
 
     try {
       setIsLoading(true);
-      const response = await createJourneyService(requestPayload);
+      const response = await JourneyService.createJourney(requestPayload);
       console.log("Journey created successfully:", response);
       setSourceAirport(null);
       setDestAirport(null);

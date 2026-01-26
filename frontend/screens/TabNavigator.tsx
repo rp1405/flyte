@@ -1,12 +1,11 @@
-import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Home, MessageCircle, User } from "lucide-react-native";
-import { View, Text } from "react-native";
+import React from "react";
 
 // Import your screens
-import HomeScreen from "../screens/HomeScreen";
-import ChatsScreen from "../screens/ChatsScreen";
-import ProfileScreen from "../screens/ProfileScreen";
+import ChatsScreen from "./ChatScreen";
+import HomeScreen from "./HomeScreen";
+import ProfileScreen from "./ProfileScreen";
 
 // Import your colors constant
 import { AppColors } from "../constants/colors";
@@ -35,7 +34,7 @@ const TabNavigator = () => {
           borderTopWidth: 1,
           paddingTop: 2,
           height: 65,
-          paddingBottom:4
+          paddingBottom: 4,
         },
 
         // Styling the labels text

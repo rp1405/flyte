@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
-import { Airport } from "../models/airport";
+import { Airport } from "../types/airport";
 
 // --- Interface Definition ---
 interface AirportSearchModalProps {

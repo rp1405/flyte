@@ -28,4 +28,6 @@ public class Room extends BaseEntity {
     @Column(name = "expiry_time")
     private Instant expiryTime;
 
+    @Column(name = "last_message_timestamp", nullable = true)
+    private Instant lastMessageTimestamp;
 }

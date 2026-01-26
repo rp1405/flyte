@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 // 1. Add this import
 import { useFocusEffect } from "@react-navigation/native";
-import { JourneyResponse } from "../models/journey";
 import { fetchUserJourneysService } from "../services/ChatService";
+import { JourneyResponse } from "../types/journey";
 
 interface UseChatsResult {
   chats: JourneyResponse[];
@@ -44,7 +44,6 @@ export const useChats = (userId: string | null): UseChatsResult => {
 
   // This will run every time the screen using this hook comes into focus.
   useFocusEffect(
-    
     useCallback(() => {
       loadChats();
     }, [loadChats]) // Dependency ensures it uses the latest version of loadChats

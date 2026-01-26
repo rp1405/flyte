@@ -1,5 +1,7 @@
 package com.flyte.backend.model;
 
+import java.util.UUID;
+
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -18,7 +20,7 @@ import lombok.EqualsAndHashCode;
 @Entity
 @EqualsAndHashCode(callSuper = true)
 @Table(name = "messages")
-public class Message extends BaseEntity{
+public class Message extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false, foreignKey = @ForeignKey(name = "fk_room_id"), referencedColumnName = "id")
@@ -39,5 +41,8 @@ public class Message extends BaseEntity{
     private MediaType mediaType;
 
     private String mediaLink;
-    
+
+    public UUID getRoomId() {
+        return room != null ? room.getId() : null;
+    }
 }
