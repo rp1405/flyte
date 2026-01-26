@@ -7,16 +7,14 @@ import jakarta.validation.Valid;
 import com.flyte.backend.service.MessageService;
 import com.flyte.backend.model.Message;
 import com.flyte.backend.DTO.Message.CreateMessageRequest;
-
 import java.util.List;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/messages")
 public class MessageController {
-    
+
     private final MessageService messageService;
-    
 
     public MessageController(MessageService messageService) {
         this.messageService = messageService;
