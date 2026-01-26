@@ -1,11 +1,8 @@
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { RouteProp, useNavigation } from "@react-navigation/native";
 import { ChevronLeft, MoreVertical, Send } from "lucide-react-native";
-// ADDED: useCallback here
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Text,
@@ -16,132 +13,102 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
 
+// 1. WatermelonDB Imports
+import { Q } from "@nozbe/watermelondb";
+import { withObservables } from "@nozbe/watermelondb/react";
+import { database } from "../db/index"; // Your DB Instance
+import Message from "../db/models/Message"; // Your Message Model
+import Room from "../db/models/Room"; // Your Room Model
+
 import { useChatWebSocket } from "../hooks/useChatWebsocket";
-import { fetchRoomMessagesService } from "../services/MessageService";
-import { BackendMessage, UIMessage } from "../types/message";
+import { BackendMessage } from "../types/message";
 
-const ChatDetailScreen = () => {
+// Define the shape of your route params
+type RootStackParamList = {
+  ChatDetail: { roomId: string; userId: string };
+};
+
+interface ChatDetailProps {
+  room: Room;
+  messages: Message[];
+  // Add route here so we can access userId inside the component
+  route: RouteProp<RootStackParamList, "ChatDetail">;
+}
+
+// 3. The Component (Now simpler)
+const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
   const navigation = useNavigation();
-  const route = useRoute<any>();
-  const {
-    roomId,
-    title = "Chat",
-    type = "group",
-    avatarUrl,
-    userId,
-  } = route.params;
-
   const [inputText, setInputText] = useState("");
-  const [messages, setMessages] = useState<UIMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const flatListRef = useRef<FlatList>(null);
+  const userId = route.params.userId;
 
-  // --- HELPERs (formatTime, mapBackendMessageToUI) UNCHANGED ---
-  const formatTime = (isoString: string) => {
-    try {
-      return new Date(isoString).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
+  // Helper for type checking
+  const type = room.type;
+  const title = room.name;
+
+  // --- WEBSOCKET HANDLER ---
+  // When a socket message comes, we SAVE IT TO DB.
+  // The UI updates automatically because we are observing the DB.
+  const onMessageReceived = async (backendMsg: BackendMessage) => {
+    await database.write(async () => {
+      const messagesCollection = database.get<Message>("messages");
+      const roomsCollection = database.get<Room>("rooms");
+
+      console.log("WebSocket: New message received", backendMsg);
+
+      // 1. Save Message
+      await messagesCollection.create((m) => {
+        m._raw.id = backendMsg.id;
+        m.text = backendMsg.messageText;
+        m.timestamp = new Date(backendMsg.createdAt);
+        m.senderId = backendMsg.user.id;
+        m.senderName = backendMsg.user.name;
+        m.room.id = room.id;
       });
-    } catch (e) {
-      return "";
-    }
+
+      // 2. Update Room (for sorting in the list)
+      const roomToUpdate = await roomsCollection.find(room.id);
+      await roomToUpdate.update((r) => {
+        // Ensure you convert to number if your schema uses number
+        r.lastMessageTimestamp = new Date(backendMsg.createdAt);
+      });
+    });
   };
 
-  const mapBackendMessageToUI = useCallback(
-    (backendMsg: BackendMessage): UIMessage => {
-      return {
-        id: backendMsg.id,
-        text: backendMsg.messageText,
-        senderId: backendMsg.user.id,
-        senderName: backendMsg.user.name || "Unknown",
-        timestamp: formatTime(backendMsg.createdAt),
-      };
-    },
-    []
-  );
+  const { sendMessage } = useChatWebSocket(room.id, userId, onMessageReceived);
 
-  // --- 2. NEW: WebSocket Message Handler ---
-  // This callback fires whenever a new message arrives over the socket.
-  // We use useCallback so the hook dependency doesn't change unnecessarily.
-  const onMessageReceived = useCallback(
-    (backendMsg: BackendMessage) => {
-      // Map the incoming real-time message to UI shape
-      const newUIMsg = mapBackendMessageToUI(backendMsg);
-
-      // Add to state.
-      // Since FlatList is INVERTED, new messages go to the START of the array.
-      setMessages((prevMessages) => {
-        // Simple check to avoid duplicate keys if REST and WS overlap slightly
-        if (prevMessages.some((m) => m.id === newUIMsg.id)) {
-          return prevMessages;
-        }
-        return [newUIMsg, ...prevMessages];
-      });
-    },
-    [mapBackendMessageToUI]
-  );
-
-  // --- 3. NEW: Initialize WebSocket Hook ---
-  const { sendMessage } = useChatWebSocket(roomId, userId, onMessageReceived);
-
-  // --- EFFECT: Fetch initial messages on mount (UNCHANGED) ---
-  useEffect(() => {
-    const loadMessages = async () => {
-      if (!roomId) return;
-      setIsLoading(true);
-      try {
-        const backendData = await fetchRoomMessagesService(roomId);
-        const uiMessages = backendData.map(mapBackendMessageToUI);
-        // Assuming backend returns oldest first.
-        // Inverted list needs newest at index 0, so we REVERSE history.
-        setMessages(uiMessages);
-      } catch (error) {
-        console.error("Failed to load chat history:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadMessages();
-  }, [roomId, mapBackendMessageToUI]);
-
-  // --- 4. UPDATED: Handle Send ---
   const handleSend = () => {
     const textToSend = inputText.trim();
     if (textToSend.length === 0) return;
 
-    // --- WebSocket Implementation ---
-    // Send the message over the socket.
-    // We rely on the backend to broadcast it back to trigger onMessageReceived
-    sendMessage(textToSend, userId, roomId);
+    sendMessage(textToSend, userId, room.id);
     setInputText("");
-
-    // Optional: If you want "optimistic updates" (show immediately before server confirms),
-    // keep the previous logic here. But relying on the socket echo is safer to ensure consistency.
+    // Note: Ideally, you also optimistically write to DB here for instant UI
   };
 
-  // --- RENDER (No changes below here) ---
   const renderMessageItem = ({
     item,
     index,
   }: {
-    item: UIMessage;
+    item: Message;
     index: number;
   }) => {
     const isMe = item.senderId === userId;
-    const isGroupChat = type === "group";
+    // const isGroupChat = type === "SOURCE" || type === "DESTINATION" || type === "FLIGHT";
 
-    // INVERTED LIST LOGIC:
-    // The "next" message visually (below current) is actually at index + 1
+    // Since 'messages' is now a WatermelonDB object, accessing index + 1 is fine
     const nextMessage = messages[index + 1];
     const isSameSenderAsPrevious = nextMessage?.senderId === item.senderId;
 
+    // Helper to format time from timestamp
+    console.log("Message object:", item);
+    const timeStr = new Date(item.timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     return (
       <View
-        className={`my-1 px-4 w-full flex-row ${
-          isMe ? "justify-end" : "justify-start"
-        }`}
+        className={`my-1 px-4 w-full flex-row ${isMe ? "justify-end" : "justify-start"}`}
         style={{ marginTop: isSameSenderAsPrevious ? 4 : 12 }}
       >
         <View
@@ -151,22 +118,14 @@ const ChatDetailScreen = () => {
               : "bg-surface border border-border rounded-tl-none"
           }`}
         >
-          {!isMe && isGroupChat && !isSameSenderAsPrevious && (
-            <Text className="text-brand font-bold text-xs mb-1">
-              {item.senderName}
-            </Text>
-          )}
-
+          {/* You can add Sender Name logic here if needed */}
           <Text className={`text-base ${isMe ? "text-white" : "text-text"}`}>
             {item.text}
           </Text>
-
           <Text
-            className={`text-[10px] text-right mt-1 ${
-              isMe ? "text-white/70" : "text-subtext"
-            }`}
+            className={`text-[10px] text-right mt-1 ${isMe ? "text-white/70" : "text-subtext"}`}
           >
-            {item.timestamp}
+            {timeStr}
           </Text>
         </View>
       </View>
@@ -175,7 +134,7 @@ const ChatDetailScreen = () => {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
-      {/* ... Header (Unchanged) ... */}
+      {/* Header */}
       <View className="px-4 py-3 bg-background border-b border-border flex-row items-center z-10 shadow-sm">
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -184,29 +143,14 @@ const ChatDetailScreen = () => {
           <ChevronLeft color={AppColors.text} size={28} />
         </TouchableOpacity>
 
-        {type === "direct" && avatarUrl && (
-          <Image
-            source={{ uri: avatarUrl }}
-            className="w-8 h-8 rounded-full mr-3 border border-border"
-          />
-        )}
-
         <View className="flex-1">
           <Text className="text-lg font-bold text-text" numberOfLines={1}>
             {title}
           </Text>
-          {type === "group" ? (
-            <Text className="text-xs text-subtext">Group Chat</Text>
-          ) : (
-            <Text className="text-xs text-green-600">Online</Text>
-          )}
         </View>
-
-        <View className="flex-row gap-4">
-          <TouchableOpacity>
-            <MoreVertical color={AppColors.text} size={22} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity>
+          <MoreVertical color={AppColors.text} size={22} />
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -214,32 +158,18 @@ const ChatDetailScreen = () => {
         className="flex-1"
         keyboardVerticalOffset={Platform.OS === "ios" ? 10 : 0}
       >
-        {isLoading ? (
-          <View className="flex-1 items-center justify-center">
-            <ActivityIndicator size="large" color={AppColors.brand} />
-          </View>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessageItem}
-            keyExtractor={(item) => item.id}
-            inverted // KEEPING INVERTED AS PER YOUR CODE
-            contentContainerStyle={{
-              paddingHorizontal: 0,
-              paddingVertical: 16,
-            }}
-            showsVerticalScrollIndicator={false}
-            keyboardDismissMode="on-drag"
-            ListEmptyComponent={
-              <View className="flex-1 items-center justify-center pt-20 rotate-180">
-                <Text className="text-subtext">No messages yet. Say hi!</Text>
-              </View>
-            }
-          />
-        )}
+        {/* LIST IS NOW DRIVEN BY DB PROPS */}
+        <FlatList
+          data={messages}
+          renderItem={renderMessageItem}
+          keyExtractor={(item) => item.id}
+          inverted // WatermelonDB sorts Descending (Newest first), so Inverted puts Newest at bottom
+          contentContainerStyle={{ paddingHorizontal: 0, paddingVertical: 16 }}
+          showsVerticalScrollIndicator={false}
+          keyboardDismissMode="on-drag"
+        />
 
-        {/* ... Input Area (Unchanged) ... */}
+        {/* Input Area */}
         <SafeAreaView
           edges={["bottom"]}
           className="bg-background border-t border-border p-3"
@@ -269,4 +199,19 @@ const ChatDetailScreen = () => {
   );
 };
 
-export default ChatDetailScreen;
+const enhance = withObservables(["route"], ({ route }) => {
+  const { roomId } = route.params;
+
+  return {
+    // ✅ Add <Room> here
+    room: database.get<Room>("rooms").findAndObserve(roomId),
+
+    // ✅ Add <Message> here (This fixes the "Model[] not assignable to Message[]" error)
+    messages: database
+      .get<Message>("messages")
+      .query(Q.where("room_id", roomId), Q.sortBy("timestamp", Q.desc))
+      .observe(),
+  };
+});
+
+export default enhance(ChatDetailScreen);

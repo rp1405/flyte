@@ -1,14 +1,6 @@
 import { useNavigation } from "@react-navigation/native";
-import {
-  Building2,
-  Edit3,
-  Plane,
-  PlaneLanding,
-  PlaneTakeoff,
-  Search,
-  X,
-} from "lucide-react-native";
-import React, { useCallback, useMemo, useState } from "react";
+import { Edit3, Search, X } from "lucide-react-native";
+import React, { useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -44,37 +36,6 @@ export default function ChatsScreen() {
   //     setRefreshing(false);
   //   }, []);
 
-  // 3. Helper: Icon Config (Same as before, but using Room model fields)
-  const getIconConfig = useCallback((roomType: string) => {
-    const typeUpper = roomType?.toUpperCase();
-    switch (typeUpper) {
-      case "SOURCE":
-        return {
-          icon: PlaneTakeoff,
-          bgColorBg: "bg-blue-900/30",
-          iconColorHex: AppColors.brand,
-        };
-      case "DESTINATION":
-        return {
-          icon: PlaneLanding,
-          bgColorBg: "bg-orange-900/30",
-          iconColorHex: "#f97316",
-        };
-      case "FLIGHT":
-        return {
-          icon: Plane,
-          bgColorBg: "bg-purple-900/30",
-          iconColorHex: "#9333ea",
-        };
-      default:
-        return {
-          icon: Building2,
-          bgColorBg: "bg-slate-800/30",
-          iconColorHex: AppColors.subtext,
-        };
-    }
-  }, []);
-
   // 4. Search Filter
   const filteredRooms = useMemo(() => {
     if (!searchText.trim()) return rooms;
@@ -86,9 +47,7 @@ export default function ChatsScreen() {
   // 5. Navigate
   const handleChatPress = (room: Room) => {
     navigation.navigate("ChatDetail", {
-      roomId: room.id,
-      title: room.name,
-      type: room.type,
+      roomId: room.id, // ✅ Pass ONLY the ID string
       userId: user?.id,
     });
   };

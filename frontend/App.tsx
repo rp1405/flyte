@@ -7,11 +7,11 @@ import { registerRootComponent } from "expo";
 import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { database as localDb } from "./db";
-import "./global.css";
 import { AppColors } from "./constants/colors";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ConfigProvider } from "./context/ConfigContext";
+import { database as localDb } from "./db";
+import "./global.css";
 import ChatDetailScreen from "./screens/ChatDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
 import TabNavigator from "./screens/TabNavigator";
@@ -41,6 +41,13 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppNavigator() {
   const { user, isAuthLoading } = useAuth();
 
+  // Example usage in HomeScreen.tsx
+  useEffect(() => {
+    if (user?.id) {
+      SyncService.syncUserChatData(user.id);
+    }
+  }, [user]);
+
   // A. Loading State
   // While checking storage, show a spinner (or a Splash Screen)
   if (isAuthLoading) {
@@ -57,13 +64,6 @@ function AppNavigator() {
       </View>
     );
   }
-
-  // Example usage in HomeScreen.tsx
-  useEffect(() => {
-    if (user?.id) {
-      SyncService.syncUserChatData(user.id);
-    }
-  }, [user]);
 
   // B. Main Navigation
   return (

@@ -2,6 +2,7 @@ import Message from "@/db/models/Message";
 import Room from "@/db/models/Room";
 import { Q } from "@nozbe/watermelondb";
 import { withObservables } from "@nozbe/watermelondb/react";
+import { map } from "@nozbe/watermelondb/utils/rx";
 import {
   Building2,
   Plane,
@@ -124,17 +125,17 @@ const ChatItem = ({ room, latestMessage, onPress }: ChatItemProps) => {
     </TouchableOpacity>
   );
 };
-
 // 2. THE OBSERVABLE WRAPPER
-// This connects the component to the database.
 const enhance = withObservables(["room"], ({ room }) => ({
-  room: room.observe(), // Watch the Room itself (for name changes)
+  room: room.observe(),
 
-  // Watch the Messages relation to get the preview text live
   latestMessage: room.messages
     .extend(Q.sortBy("timestamp", Q.desc), Q.take(1))
     .observe()
-    .map((messages: Message[]) => messages[0]), // Extract the first item
+    .pipe(
+      // ✅ Use pipe to attach operators
+      map((messages: Message[]) => messages[0]) // ✅ Use the imported map operator
+    ),
 }));
 
 export default enhance(ChatItem);

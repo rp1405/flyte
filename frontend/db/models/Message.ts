@@ -1,5 +1,5 @@
 import { Model, Relation } from "@nozbe/watermelondb";
-import { relation, text } from "@nozbe/watermelondb/decorators";
+import { date, relation, text } from "@nozbe/watermelondb/decorators";
 import Room from "./Room";
 
 export default class Message extends Model {
@@ -10,7 +10,7 @@ export default class Message extends Model {
   } as const;
 
   @text("text") text!: string;
-  @text("timestamp") timestamp!: string;
+  @date("timestamp") timestamp!: Date;
 
   // Relation: Strictly typed to link to the Room model
   @relation("rooms", "room_id") room!: Relation<Room>;

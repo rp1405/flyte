@@ -1,7 +1,7 @@
+import { database } from "@/db"; // <--- Adjust path to your DB
 import { Q } from "@nozbe/watermelondb";
-import { database } from "@/db";// <--- Adjust path to your DB
-import Room from "../db/models/Room";
 import Message from "../db/models/Message";
+import Room from "../db/models/Room";
 import { RequestExecutor } from "./RequestExecutor";
 
 // --- 1. Define Interfaces Matching Your JSON Exactly ---
@@ -44,14 +44,13 @@ export interface RoomWithMessagesResponse {
 // --- 2. The Sync Service ---
 
 export class SyncService {
-    
   static async syncUserChatData(userId: string): Promise<void> {
     try {
       console.log("Syncing: Fetching latest data...");
 
       // A. Fetch from Backend
       const response = await RequestExecutor.get<RoomWithMessagesResponse[]>(
-        `/getRoomsAndMessagesByUserId?userId=${userId}`,
+        `/api/rooms/getRoomsAndMessagesByUserId?userId=${userId}`
       );
 
       if (!response.success || !response.data) {
@@ -103,11 +102,11 @@ export class SyncService {
               r.name = apiRoom.name;
               r.description = apiRoom.description;
               r.type = apiRoom.type;
-              r.createdAt = apiRoom.createdAt;
-              r.expiryTime = apiRoom.expiryTime;
-              r.updatedAt = apiRoom.updatedAt;
-              r.lastMessageTimestamp = apiRoom.lastMessageTimestamp;
-            }),
+              r.createdAt = new Date(apiRoom.createdAt);
+              r.expiryTime = new Date(apiRoom.expiryTime);
+              r.updatedAt = new Date(apiRoom.updatedAt);
+              r.lastMessageTimestamp = new Date(apiRoom.lastMessageTimestamp);
+            })
           );
 
           // Prepare Message Creation
@@ -125,10 +124,10 @@ export class SyncService {
 
                   // Map Message Content
                   m.text = msg.messageText;
-                  m.timestamp = msg.createdAt;
+                  m.timestamp = new Date(msg.createdAt);
                   m.mediaType = msg.mediaType;
                   m.mediaLink = msg.mediaLink;
-                }),
+                })
               );
             }
           }

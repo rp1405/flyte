@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export const schema = appSchema({
-  version: 1,
+  version: 5,
   tables: [
     tableSchema({
       name: "users",
@@ -29,7 +29,7 @@ export const schema = appSchema({
       name: "messages",
       columns: [
         { name: "text", type: "string" },
-        { name: "timestamp", type: "string" }, // Your interface requested string
+        { name: "timestamp", type: "number" },
         { name: "room_id", type: "string", isIndexed: true }, // FK to Room
 
         // JUST DATA FIELDS (No Relations)
