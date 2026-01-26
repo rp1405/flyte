@@ -8,8 +8,6 @@ import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.stereotype.Controller;
 
-import java.util.UUID;
-
 import jakarta.validation.Valid;
 
 // Note: @Controller, NOT @RestController
@@ -22,9 +20,9 @@ public class ChatController {
         this.chatService = chatService;
     }
 
-    @MessageMapping("/chat.send/{roomId}") 
+    @MessageMapping("/chat.send/{roomId}")
     public void handleRealtimeMessage(@DestinationVariable String roomId,
-                                      @Payload @Valid ClientMessage request) {
+            @Payload @Valid ClientMessage request) {
 
         chatService.processAndBroadcastMessage(request, roomId);
     }
