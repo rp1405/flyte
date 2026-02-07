@@ -13,8 +13,10 @@ import com.flyte.backend.DTO.Journey.CreateJourneyRequest;
 import com.flyte.backend.enums.RoomType;
 import com.flyte.backend.model.Journey;
 import com.flyte.backend.model.Room;
+import com.flyte.backend.model.RoomParticipant;
 import com.flyte.backend.model.User;
 import com.flyte.backend.repository.JourneyRepository;
+import com.flyte.backend.repository.RoomParticipantRepository;
 import com.flyte.backend.repository.RoomRepository;
 import com.flyte.backend.repository.UserRepository;
 import com.flyte.backend.util.SlotGenerator;
@@ -26,6 +28,7 @@ public class JourneyService {
         private final JourneyRepository journeyRepository;
         private final UserRepository userRepository;
         private final RoomRepository roomRepository;
+        private final RoomParticipantRepository roomParticipantRepository;
         private final int totalSlots;
 
         private static final long EXPIRY_BUFFER_SECONDS = 24 * 60 * 60; // 24 Hours
@@ -33,10 +36,12 @@ public class JourneyService {
         public JourneyService(JourneyRepository journeyRepository,
                         UserRepository userRepository,
                         RoomRepository roomRepository,
+                        RoomParticipantRepository roomParticipantRepository,
                         @Value("${app.num_slots}") int totalSlots) {
                 this.journeyRepository = journeyRepository;
                 this.userRepository = userRepository;
                 this.roomRepository = roomRepository;
+                this.roomParticipantRepository = roomParticipantRepository;
                 this.totalSlots = totalSlots;
         }
 
@@ -61,14 +66,25 @@ public class JourneyService {
                 newJourney.setSourceSlot(sourceSlotObj.getSlotString());
                 newJourney.setDestinationSlot(destinationSlotObj.getSlotString());
 
-                // 4. Assign Rooms (Fixed Logic)
+                // 4. Assign Rooms
                 assignFlightRoom(newJourney, request, sourceSlotObj, destinationSlotObj);
                 assignSourceRoom(newJourney, request, sourceSlotObj, destinationSlotObj);
                 assignDestinationRoom(newJourney, request, destinationSlotObj);
 
-                // 5. Check Duplicates & Save
+                // 5. Check Duplicates
                 validateJourneyDoesNotExist(newJourney);
-                return journeyRepository.save(newJourney);
+
+                // 6. Save Journey (This commits immediately to DB)
+                Journey savedJourney = journeyRepository.save(newJourney);
+
+                // 7. Add Participants (These commit one by one)
+                // If the server crashes here, the Journey exists but the user isn't in the
+                // rooms.
+                addUserToRoom(user, savedJourney.getFlightRoom());
+                addUserToRoom(user, savedJourney.getSourceRoom());
+                addUserToRoom(user, savedJourney.getDestinationRoom());
+
+                return savedJourney;
         }
 
         public Journey getJourneyById(UUID journeyId) {
@@ -83,6 +99,17 @@ public class JourneyService {
         // ===================================================================================
         // HELPER METHODS
         // ===================================================================================
+
+        private void addUserToRoom(User user, Room room) {
+                // Optional: Check if already in room to prevent unique constraint errors
+                // (Useful if user books 2 flights that share a Lounge room)
+                if (!roomParticipantRepository.existsByRoomIdAndUserId(room.getId(), user.getId())) {
+                        RoomParticipant participant = new RoomParticipant();
+                        participant.setRoom(room);
+                        participant.setUser(user);
+                        roomParticipantRepository.save(participant);
+                }
+        }
 
         private void assignFlightRoom(Journey journey, CreateJourneyRequest request, SlotGenerator sourceSlot,
                         SlotGenerator destSlot) {

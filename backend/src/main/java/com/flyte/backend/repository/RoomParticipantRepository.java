@@ -1,9 +1,9 @@
 package com.flyte.backend.repository;
 
 import com.flyte.backend.enums.RoomType;
+import com.flyte.backend.model.Room;
 import com.flyte.backend.model.RoomParticipant;
 import com.flyte.backend.model.User;
-
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,37 +11,58 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
+
+import com.flyte.backend.enums.ConnectionStatus;
 
 @Repository
 public interface RoomParticipantRepository extends JpaRepository<RoomParticipant, UUID> {
 
-    // 1. Get all users in a specific room (Group Chat / DM)
-    List<RoomParticipant> findByRoomId(UUID roomId);
+        // 1. Get all participants
+        List<RoomParticipant> findByRoomId(UUID roomId);
 
-    // 2. Get all rooms a specific user is in (My Chats List)
-    List<RoomParticipant> findByUserId(UUID userId);
+        // 2. Get all entries for a user
+        List<RoomParticipant> findByUserId(UUID userId);
 
-    // 3. Security Check: Is this user actually in this room?
-    // Use this before sending a message!
-    boolean existsByRoomIdAndUserId(UUID roomId, UUID userId);
+        // 3. Security Check
+        boolean existsByRoomIdAndUserId(UUID roomId, UUID userId);
 
-    // 4. Remove a specific user from a specific room (e.g. "Leave Group")
-    void deleteByRoomIdAndUserId(UUID roomId, UUID userId);
+        // 4. Leave Group (Requires Transactional at Service level usually)
+        void deleteByRoomIdAndUserId(UUID roomId, UUID userId);
 
-    @Query("SELECT rp.user FROM RoomParticipant rp WHERE rp.room.id = :roomId")
-    List<User> findUsersByRoomId(@Param("roomId") UUID roomId);
+        // 5. Get actual User objects in a room
+        @Query("SELECT rp.user FROM RoomParticipant rp WHERE rp.room.id = :roomId")
+        List<User> findUsersByRoomId(@Param("roomId") UUID roomId);
 
-    @Query("SELECT rp.room FROM RoomParticipant rp WHERE rp.user.id = :userId")
-    List<User> findRoomsByUserId(@Param("userId") UUID userId);
+        // 6. Get actual Room objects for a user
+        // FIXED: Return type changed to List<Room>
+        @Query("SELECT rp.room FROM RoomParticipant rp WHERE rp.user.id = :userId")
+        List<Room> findRoomsByUserId(@Param("userId") UUID userId);
 
-    @Query("SELECT rp.user FROM RoomParticipant rp WHERE rp.room.id = :roomId AND rp.user.id != :userId")
-    List<User> findOtherParticipants(@Param("roomId") UUID roomId, @Param("myUserId") UUID userId);
+        // 7. Find everyone else in the room (List version)
+        // FIXED: Param name matched to query (:userId)
+        @Query("SELECT rp.user FROM RoomParticipant rp WHERE rp.room.id = :roomId AND rp.user.id != :userId")
+        List<User> findOtherParticipants(@Param("roomId") UUID roomId, @Param("userId") UUID userId);
 
-    @Query("SELECT rp.user FROM RoomParticipant rp " +
-            "WHERE rp.room.id = :roomId " +
-            "AND rp.user.id != :userId " +
-            "AND rp.room.type = :type")
-    User findOtherParticipant(@Param("roomId") UUID roomId,
-            @Param("userId") UUID userId,
-            @Param("type") RoomType type);
+        // 8. Find specific other person (Single User version - for DMs)
+        @Query("SELECT rp FROM RoomParticipant rp " +
+                        "WHERE rp.room.id = :roomId " +
+                        "AND rp.user.id != :userId " +
+                        "AND rp.room.type = :type")
+        Optional<RoomParticipant> findOtherParticipant(@Param("roomId") UUID roomId,
+                        @Param("userId") UUID userId,
+                        @Param("type") RoomType type);
+
+        @Query("SELECT rp1.room FROM RoomParticipant rp1 " +
+                        "JOIN RoomParticipant rp2 ON rp1.room.id = rp2.room.id " +
+                        "WHERE rp1.user.id = :userId1 " +
+                        "AND rp2.user.id = :userId2 " +
+                        "AND rp1.room.type = :type")
+        List<Room> findRoomForUsers(@Param("userId1") UUID userId1,
+                        @Param("userId2") UUID userId2,
+                        @Param("type") RoomType type);
+
+        List<RoomParticipant> findByUserIdAndStatus(UUID userId, ConnectionStatus status);
+
+        Optional<RoomParticipant> findByRoomIdAndUserId(UUID roomId, UUID userId);
 }

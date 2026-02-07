@@ -10,11 +10,16 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import com.flyte.backend.enums.ConnectionStatus;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
 // Unique constraint ensures a user can't be added to the same DM twice
+// This table is limited to users in DMs, not in group chats;
 @Table(name = "dm_participants", uniqueConstraints = {
         @UniqueConstraint(columnNames = { "room_id", "user_id" })
 })
@@ -29,5 +34,9 @@ public class RoomParticipant extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_dm_user"), referencedColumnName = "id")
     @OnDelete(action = OnDeleteAction.CASCADE) // If User is deleted, this link is deleted
     private User user;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private ConnectionStatus status = ConnectionStatus.CONNECTED; // Default to CONNECTED for backward compatibility
 
 }

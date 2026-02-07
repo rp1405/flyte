@@ -3,6 +3,7 @@ package com.flyte.backend.controller;
 import com.flyte.backend.DTO.Room.RoomRequest;
 import com.flyte.backend.DTO.Room.RoomResponse;
 import com.flyte.backend.DTO.Room.RoomWithMessages;
+import com.flyte.backend.model.User;
 import com.flyte.backend.service.RoomService;
 
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -44,6 +46,12 @@ public class RoomController {
     public ResponseEntity<List<RoomWithMessages>> getRoomsAndMessagesByUserId(@RequestParam UUID userId) {
         List<RoomWithMessages> response = roomService.getRoomsAndMessagesByUserId(userId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/getParticipantsInRoom")
+    public ResponseEntity<List<User>> getParticipantsInRoom(@RequestParam UUID roomId) {
+        List<User> participants = roomService.getParticipantsInRoom(roomId);
+        return ResponseEntity.ok(participants);
     }
 
 }
