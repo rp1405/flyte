@@ -3,7 +3,6 @@ package com.flyte.backend.service;
 import com.flyte.backend.DTO.Room.RoomRequest;
 import com.flyte.backend.DTO.Room.RoomResponse;
 import com.flyte.backend.DTO.Room.RoomWithMessages;
-import com.flyte.backend.model.Journey;
 import com.flyte.backend.model.Message;
 import com.flyte.backend.model.Room;
 import com.flyte.backend.model.User;
@@ -16,7 +15,6 @@ import com.flyte.backend.enums.RoomType;
 import com.flyte.backend.model.RoomParticipant;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,15 +29,13 @@ public class RoomService {
 
     private final RoomRepository roomRepository;
     private final RoomParticipantRepository roomParticipantRepository;
-    private final JourneyService journeyService;
     private final MessageService messageService;
     private final UserRepository userRepository;
 
     public RoomService(RoomRepository roomRepository, RoomParticipantRepository roomParticipantRepository,
-            JourneyService journeyService, MessageService messageService, UserRepository userRepository) {
+            MessageService messageService, UserRepository userRepository) {
         this.roomRepository = roomRepository;
         this.roomParticipantRepository = roomParticipantRepository;
-        this.journeyService = journeyService;
         this.messageService = messageService;
         this.userRepository = userRepository;
     }
@@ -61,28 +57,20 @@ public class RoomService {
     }
 
     public List<RoomWithMessages> getRoomsAndMessagesByUserId(UUID userId) {
-        List<Journey> journeysByUser = journeyService.getJourneyByUserId(userId);
+        List<Room> roomsByUser = roomParticipantRepository.findRoomsByUserIdAndStatusExcept(userId,
+                ConnectionStatus.NOT_CONNECTED);
 
         // 1. Collect Unique Rooms using a Map (Key: ID, Value: Room Object)
-        // Using a Map ensures that if we see the same Room ID twice, we overwrite it,
-        // preventing duplicates.
         Map<UUID, Room> uniqueRoomsMap = new HashMap<>();
 
-        for (Journey journey : journeysByUser) {
-            List<Room> currentRooms = Arrays.asList(
-                    journey.getSourceRoom(),
-                    journey.getDestinationRoom(),
-                    journey.getFlightRoom());
-
-            for (Room room : currentRooms) {
-                if (room != null) {
-                    // Check expiry logic immediately
-                    if (room.getExpiryTime() != null && Instant.now().isAfter(room.getExpiryTime())) {
-                        continue;
-                    }
-                    // Put into map: This acts as the deduplication filter
-                    uniqueRoomsMap.put(room.getId(), room);
+        for (Room room : roomsByUser) {
+            if (room != null) {
+                // Check expiry logic immediately
+                if (room.getExpiryTime() != null && Instant.now().isAfter(room.getExpiryTime())) {
+                    continue;
                 }
+                // Put into map: This acts as the deduplication filter
+                uniqueRoomsMap.put(room.getId(), room);
             }
         }
 

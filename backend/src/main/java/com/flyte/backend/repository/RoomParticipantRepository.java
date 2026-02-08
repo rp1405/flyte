@@ -35,12 +35,11 @@ public interface RoomParticipantRepository extends JpaRepository<RoomParticipant
         List<User> findUsersByRoomId(@Param("roomId") UUID roomId);
 
         // 6. Get actual Room objects for a user
-        // FIXED: Return type changed to List<Room>
-        @Query("SELECT rp.room FROM RoomParticipant rp WHERE rp.user.id = :userId")
-        List<Room> findRoomsByUserId(@Param("userId") UUID userId);
+        @Query("SELECT rp.room FROM RoomParticipant rp WHERE rp.user.id = :userId AND rp.status != :status")
+        List<Room> findRoomsByUserIdAndStatusExcept(@Param("userId") UUID userId,
+                        @Param("status") ConnectionStatus status);
 
         // 7. Find everyone else in the room (List version)
-        // FIXED: Param name matched to query (:userId)
         @Query("SELECT rp.user FROM RoomParticipant rp WHERE rp.room.id = :roomId AND rp.user.id != :userId")
         List<User> findOtherParticipants(@Param("roomId") UUID roomId, @Param("userId") UUID userId);
 
