@@ -38,8 +38,15 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // --- 1. SEPARATE NAVIGATION LOGIC ---
 // We need a separate component here because we can only call 'useAuth'
 // INSIDE a component that is wrapped by <AuthProvider>
+import { useGlobalWebSocketListener } from "./hooks/useGlobalWebSocketListener";
+
+// ...
+
 function AppNavigator() {
   const { user, isAuthLoading } = useAuth();
+  
+  // Initialize Global WebSocket Listener
+  useGlobalWebSocketListener();
 
   // Example usage in HomeScreen.tsx
   useEffect(() => {
