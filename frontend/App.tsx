@@ -28,6 +28,10 @@ export type RootStackParamList = {
     avatarUrl?: string;
     userId: string;
   };
+  GroupInfo: {
+    roomId: string;
+  };
+  UserProfile: { user: JourneyUser };
 };
 
 export type RootStackNavigationProp =
@@ -39,6 +43,10 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // We need a separate component here because we can only call 'useAuth'
 // INSIDE a component that is wrapped by <AuthProvider>
 import { useGlobalWebSocketListener } from "./hooks/useGlobalWebSocketListener";
+import GroupInfoScreen from "./screens/GroupInfoScreen";
+import { JourneyUser } from "./types/journey";
+import { User } from "lucide-react-native";
+import UserProfileScreen from "./screens/UserProfileScreen";
 
 // ...
 
@@ -82,6 +90,8 @@ function AppNavigator() {
           <>
             <Stack.Screen name="MainTabs" component={TabNavigator} />
             <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+            <Stack.Screen name="GroupInfo" component={GroupInfoScreen} />
+            <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           </>
         ) : (
           // --- GUEST ROUTES ---

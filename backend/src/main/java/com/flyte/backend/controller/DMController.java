@@ -3,6 +3,7 @@ package com.flyte.backend.controller;
 import com.flyte.backend.DTO.Room.RoomResponse;
 import com.flyte.backend.DTO.Room.CreateDMRequest;
 import com.flyte.backend.service.RoomService;
+import com.flyte.backend.enums.ConnectionStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -43,5 +44,11 @@ public class DMController {
     public ResponseEntity<RoomResponse> rejectDM(@RequestParam UUID userId, @RequestParam UUID roomId) {
         RoomResponse response = roomService.rejectDM(userId, roomId);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<ConnectionStatus> getRoomStatus(@RequestParam UUID roomId, @RequestParam UUID userId) {
+        ConnectionStatus status = roomService.getRoomStatus(roomId, userId);
+        return ResponseEntity.ok(status);
     }
 }

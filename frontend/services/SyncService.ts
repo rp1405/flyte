@@ -50,13 +50,15 @@ export class SyncService {
 
       // A. Fetch from Backend
       const response = await RequestExecutor.get<RoomWithMessagesResponse[]>(
-        `/api/rooms/getRoomsAndMessagesByUserId?userId=${userId}`
+        `/api/rooms/getRoomsAndMessagesByUserId?userId=${userId}`,
       );
 
       if (!response.success || !response.data) {
         console.warn("Sync skipped: No data or error", response.error);
         return;
       }
+
+      console.log("Response:", response.data);
 
       const apiResponseList = response.data;
       if (apiResponseList.length === 0) return;
@@ -78,10 +80,10 @@ export class SyncService {
         console.warn(
           `⚠️ DUPLICATE ROOM IDs DETECTED IN API RESPONSE:\n` +
             `Count: ${duplicateIds.length}\n` +
-            `IDs: ${duplicateIds.join(", ")}`
+            `IDs: ${duplicateIds.join(", ")}`,
         );
         console.log(
-          "Info: The sync service will automatically handle these by using the last occurrence."
+          "Info: The sync service will automatically handle these by using the last occurrence.",
         );
       } else {
         console.log("✅ Data Check Passed: No duplicate Room IDs found.");
@@ -133,7 +135,7 @@ export class SyncService {
               r.expiryTime = new Date(apiRoom.expiryTime);
               r.updatedAt = new Date(apiRoom.updatedAt);
               r.lastMessageTimestamp = new Date(apiRoom.lastMessageTimestamp);
-            })
+            }),
           );
 
           // Prepare Message Creation
@@ -154,7 +156,7 @@ export class SyncService {
                   m.timestamp = new Date(msg.createdAt);
                   m.mediaType = msg.mediaType;
                   m.mediaLink = msg.mediaLink;
-                })
+                }),
               );
             }
           }

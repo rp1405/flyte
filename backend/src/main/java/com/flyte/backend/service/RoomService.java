@@ -83,7 +83,16 @@ public class RoomService {
 
         for (Room room : uniqueRoomsMap.values()) {
             RoomWithMessages item = new RoomWithMessages();
-            item.setRoom(room);
+            RoomResponse roomResponse = new RoomResponse(room);
+
+            if (room.getType() == RoomType.DM) {
+                roomParticipantRepository.findOtherParticipant(room.getId(), userId, RoomType.DM)
+                        .ifPresent(otherParticipant -> {
+                            roomResponse.setName(otherParticipant.getUser().getName());
+                        });
+            }
+
+            item.setRoom(roomResponse);
             // Safely get messages or empty list
             item.setMessages(allMessagesMap.getOrDefault(room.getId(), new ArrayList<>()));
             roomsAndMessages.add(item);
@@ -104,7 +113,9 @@ public class RoomService {
                 RoomType.DM);
         Room existingDM = existingRooms.isEmpty() ? null : existingRooms.get(0);
         if (existingDM != null) {
-            return new RoomResponse(existingDM);
+            RoomResponse response = new RoomResponse(existingDM);
+            userRepository.findById(request.getTargetUserId()).ifPresent(user -> response.setName(user.getName()));
+            return response;
         }
 
         // 2. Create new Room
@@ -132,7 +143,9 @@ public class RoomService {
         targetParticipant.setStatus(ConnectionStatus.RECEIVED);
         roomParticipantRepository.save(targetParticipant);
 
-        return new RoomResponse(savedRoom);
+        RoomResponse response = new RoomResponse(savedRoom);
+        response.setName(target.getName());
+        return response;
     }
 
     public List<RoomResponse> getReceivedDMs(UUID userId) {
@@ -173,5 +186,11 @@ public class RoomService {
         roomParticipantRepository.save(otherParticipant);
         roomParticipantRepository.save(selfParticipant);
         return new RoomResponse(otherParticipant.getRoom());
+    }
+
+    public ConnectionStatus getRoomStatus(UUID roomId, UUID userId) {
+        return roomParticipantRepository.findByRoomIdAndUserId(roomId, userId)
+                .map(RoomParticipant::getStatus)
+                .orElse(ConnectionStatus.NOT_CONNECTED);
     }
 }

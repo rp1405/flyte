@@ -1,6 +1,9 @@
 import UserData from "@/types/UserData";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { database as localDb } from "../db"; // Your initialized WatermelonDB instance
+import Message from "../db/models/Message";
+import Room from "../db/models/Room";
 import User from "../db/models/User"; // Rename import to avoid clash with interface
 
 interface AuthContextType {
@@ -84,14 +87,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setIsAuthLoading(true);
     try {
       await localDb.write(async () => {
-        // Wipe the users table
+        // 1. Fetch all records from all tables you want to clear
         const allUsers = await localDb.get<User>("users").query().fetch();
-        // batch delete is faster than iterating with await
-        const deleteOps = allUsers.map((user) =>
-          user.prepareDestroyPermanently()
+        const allRooms = await localDb.get<Room>("rooms").query().fetch();
+        const allMessages = await localDb
+          .get<Message>("messages")
+          .query()
+          .fetch();
+
+        // 2. Prepare Destroy Operations for each collection
+        const userDeleteOps = allUsers.map((u) =>
+          u.prepareDestroyPermanently(),
         );
-        await localDb.batch(...deleteOps);
+        const roomDeleteOps = allRooms.map((r) =>
+          r.prepareDestroyPermanently(),
+        );
+        const msgDeleteOps = allMessages.map((m) =>
+          m.prepareDestroyPermanently(),
+        );
+
+        // 3. Combine into a single batch operation
+        const allOperations = [
+          ...userDeleteOps,
+          ...roomDeleteOps,
+          ...msgDeleteOps,
+        ];
+
+        if (allOperations.length > 0) {
+          await localDb.batch(...allOperations);
+        }
       });
+
+      try {
+        await GoogleSignin.signOut();
+      } catch (error) {
+        console.log("Google signout ignored:", error);
+      }
 
       setToken(null);
       setUser(null);
@@ -111,6 +142,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }

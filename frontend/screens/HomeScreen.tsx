@@ -1,16 +1,16 @@
 import AirportSearchModal from "@/components/AirportSearchModal";
+import ChatItem from "@/components/ChatItem";
 import DateTimePickerSection from "@/components/DateTimePickerSection";
 import LocationSelector from "@/components/LocationSelector";
 import { useAuth } from "@/context/AuthContext";
-import { NavigationProp, useNavigation } from "@react-navigation/native";
+import { useLatestChat } from "@/hooks/localDb/useLatestChat";
+import { useNavigation } from "@react-navigation/native";
 import {
   ArrowRight,
-  Building2,
-  ChevronRight,
   MapPin,
   Plane,
   Ticket,
-  Users,
+  Users
 } from "lucide-react-native";
 import React, { useState } from "react";
 import {
@@ -28,14 +28,12 @@ import { useConfig } from "../context/ConfigContext";
 import { JourneyService } from "../services/JourneyService";
 import { Airport } from "../types/airport";
 import { CreateJourneyRequestPayload } from "../types/journey";
-import { RootTabParamList } from "./TabNavigator";
-
-type HomeScreenNavigationProp = NavigationProp<RootTabParamList>;
 
 export default function HomeScreen() {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
+  const navigation = useNavigation<any>();
   const { user, isAuthLoading } = useAuth();
   const { airports, isConfigLoading } = useConfig();
+  const { latestRoom, isLoading: isLatestLoading } = useLatestChat();
 
   const [sourceAirport, setSourceAirport] = useState<Airport | null>(null);
   const [destAirport, setDestAirport] = useState<Airport | null>(null);
@@ -220,8 +218,8 @@ export default function HomeScreen() {
         </View>
 
         {/* --- Active Chat Rooms Section --- */}
-        <View>
-          <View className="flex-row justify-between items-center mb-4">
+        <View className="mt-2">
+          <View className="flex-row justify-between items-center mb-4 px-2">
             <Text className="text-lg font-bold text-text">
               Your Active Rooms
             </Text>
@@ -232,42 +230,31 @@ export default function HomeScreen() {
               <Text className="text-sm text-brand font-medium">See All</Text>
             </TouchableOpacity>
           </View>
-          {/* ... Chat cards would go here ... */}
-          <View className="space-y-3">
-            {/* Card 1: Source Room */}
 
-            <TouchableOpacity className="bg-surface p-4 rounded-2xl border border-border flex-row justify-between items-center active:bg-background">
-              <View className="flex-row items-center gap-4 flex-1">
-                <View className="w-12 h-12 bg-orange-900/30 rounded-xl items-center justify-center">
-                  <Building2 color="#f97316" size={24} />
-                </View>
-
-                <View>
-                  <Text className="font-bold text-text text-base">
-                    Mumbai International
-                  </Text>
-
-                  <View className="flex-row items-center mt-1">
-                    <Users
-                      color={AppColors.subtext}
-                      size={12}
-                      style={{ marginRight: 4 }}
-                    />
-
-                    <Text className="text-sm text-subtext">
-                      24 active travelers
-                    </Text>
-                  </View>
-                </View>
-              </View>
-
-              <View className="w-8 h-8 bg-background rounded-full items-center justify-center">
-                <ChevronRight color={AppColors.subtext} size={20} />
-              </View>
-            </TouchableOpacity>
-
-            {/* Card 2 (omitted for brevity, same as before) */}
-          </View>
+          {isLatestLoading ? (
+            <View className="bg-surface p-8 rounded-2xl border border-border items-center justify-center">
+              <ActivityIndicator color={AppColors.brand} size="small" />
+            </View>
+          ) : latestRoom ? (
+            <View className="bg-surface rounded-2xl border border-border overflow-hidden shadow-sm">
+              <ChatItem
+                room={latestRoom}
+                onPress={() =>
+                  navigation.navigate("ChatDetail", {
+                    roomId: latestRoom.id,
+                    userId: user.id,
+                  })
+                }
+              />
+            </View>
+          ) : (
+            <View className="bg-surface p-8 rounded-2xl border border-border border-dashed items-center justify-center">
+              <Users color={AppColors.subtext} size={32} />
+              <Text className="text-subtext text-center mt-3 font-medium">
+                No active rooms yet.{"\n"}Join a journey to start chatting!
+              </Text>
+            </View>
+          )}
         </View>
       </ScrollView>
 

@@ -13,7 +13,7 @@ export const useGlobalWebSocketListener = () => {
     console.log("Global WS Event Received:", event.type, event.payload);
 
     switch (event.type) {
-      case WSMessageType.CHAT_MESSAGE:
+      case WSMessageType.CHAT_NOTIFICATION:
         // Handle incoming chat message -> Save to WatermelonDB
        
         try {
@@ -66,6 +66,7 @@ export const useGlobalWebSocketListener = () => {
         console.warn("Unhandled WebSocket event type:", event);
     }
   }, []);
+  
 
   // Initialize the websocket connection with our handler
   useGlobalWebsocket(user?.id || "", handleWebSocketEvent);

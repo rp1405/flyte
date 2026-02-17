@@ -1,15 +1,12 @@
-// src/types/websocket.ts
-
 import { BackendMessage } from "./message";
 
 // 1. The Enum: Acts as the "Key" or "Header" for routing
 export enum WSMessageType {
-  CHAT_MESSAGE = "CHAT_MESSAGE",
+  CHAT_NOTIFICATION = "CHAT_NOTIFICATION",
   USER_STATUS = "USER_STATUS",
   NOTIFICATION = "NOTIFICATION",
   TYPING_INDICATOR = "TYPING_INDICATOR",
 }
-
 
 export interface UserStatusPayload {
   userId: string;
@@ -24,9 +21,8 @@ export interface NotificationPayload {
 }
 
 // 3. The Discriminated Union: This is the magic part
-// It links the Type Enum to the specific Payload
 export type WebSocketEvent =
-  | { type: WSMessageType.CHAT_MESSAGE; payload: BackendMessage }
+  | { type: WSMessageType.CHAT_NOTIFICATION; payload: BackendMessage }
   | { type: WSMessageType.USER_STATUS; payload: UserStatusPayload }
   | { type: WSMessageType.NOTIFICATION; payload: NotificationPayload }
   | {
@@ -34,8 +30,8 @@ export type WebSocketEvent =
       payload: { roomId: string; userId: string };
     };
 
-// 4. The Response Wrapper (What comes from the server)
+// 4. The Response Wrapper (MATCHES BACKEND GlobalWebSocketEnvelope)
 export interface BackendResponse {
-  type: WSMessageType; // The discriminator
-  data: any; // The raw payload
+  type: WSMessageType; 
+  payload: any; // Changed from 'data' to 'payload' to match Java class
 }

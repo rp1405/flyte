@@ -22,7 +22,7 @@ export const useGlobalWebsocket = (
   const stompClientRef = useRef<Client | null>(null);
 
   useEffect(() => {
-    if (!currentUserId) return;
+    if (!currentUserId || currentUserId === "") return;
 
     const client = new Client({
       brokerURL: getWebSocketURL(),
@@ -45,7 +45,7 @@ export const useGlobalWebsocket = (
             // This casts the raw data into our strict TypeScript Union
             const event: WebSocketEvent = {
               type: rawResponse.type,
-              payload: rawResponse.data,
+              payload: rawResponse.payload,
             } as WebSocketEvent;
 
             // 3. Pass to the handler

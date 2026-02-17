@@ -34,7 +34,6 @@ public class NotificationService {
                 GlobalMessageType.CHAT_NOTIFICATION,
                 message // This becomes the "payload"
         );
-
         usersInRoom.stream()
                 .filter(user -> !user.getId().equals(message.getUser().getId()))
                 .forEach(user -> {
