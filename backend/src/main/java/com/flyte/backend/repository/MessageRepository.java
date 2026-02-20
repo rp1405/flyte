@@ -22,4 +22,7 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
 
     // Groups messages by Room ID, then sorts internally by time
     List<Message> findByRoom_IdInOrderByCreatedAtDesc(List<UUID> roomIds);
+
+    // Find messages in specific rooms created after a certain time
+    List<Message> findByRoom_IdInAndCreatedAtGreaterThanOrderByCreatedAtDesc(List<UUID> roomIds, java.time.Instant since);
 }
