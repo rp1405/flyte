@@ -4,7 +4,7 @@ import {
   statusCodes,
 } from "@react-native-google-signin/google-signin";
 import { Plane } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -24,12 +24,8 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
 
-  useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
-      offlineAccess: true,
-    });
-  }, []);
+  // GoogleSignin configuration is now handled in AuthProvider for global persistence.
+
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -74,17 +70,6 @@ export default function LoginScreen({ navigation }: any) {
         console.log("Backend Login Success!", data);
 
         await login(data.token, data.user);
-        // try {
-        //   await AsyncStorage.multiSet([
-        //     ["userToken", data.token],
-        //     ["userInfo", JSON.stringify(data.user)],
-        //   ]);
-        // } catch (e) {
-        //   console.error("Error saving to storage", e);
-        // }
-
-        setLoading(false);
-        //navigation.navigate("MainTabs");
       } else {
         throw new Error(data.message || "Backend authentication failed");
       }

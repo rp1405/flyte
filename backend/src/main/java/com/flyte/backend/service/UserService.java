@@ -12,23 +12,24 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final SyncService syncService;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, SyncService syncService) {
         this.userRepository = userRepository;
+        this.syncService = syncService;
     }
 
     @Transactional
     public UserResponse findOrCreateUser(UserRequest userRequest) {
-
-    return userRepository.findByEmail(userRequest.email)
+        User user = userRepository.findByEmail(userRequest.email)
                 .map(existingUser -> {
                     // Update existing user's information if needed
                     existingUser.setName(userRequest.name);
                     existingUser.setProfilePictureUrl(userRequest.profilePictureUrl);
                     existingUser.setNickname(userRequest.nickname);
                     existingUser.setPhoneNumber(userRequest.phoneNumber);
-                    return new UserResponse(userRepository.save(existingUser));
+                    return userRepository.save(existingUser);
                 })
                 .orElseGet(() -> {
                     User newUser = new User();
@@ -37,8 +38,11 @@ public class UserService {
                     newUser.setProfilePictureUrl(userRequest.profilePictureUrl);
                     newUser.setNickname(userRequest.nickname);
                     newUser.setPhoneNumber(userRequest.phoneNumber);
-                    return new UserResponse(userRepository.save(newUser));
+                    return userRepository.save(newUser);
                 });
+
+        syncService.resetSyncTime(user.getId());
+        return new UserResponse(user);
     }
 
     public UserResponse getUserByEmail(String email) {

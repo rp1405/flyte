@@ -3,19 +3,22 @@ import {
   Plane,
   PlaneLanding,
   PlaneTakeoff,
+  Users,
 } from "lucide-react-native";
 import React from "react";
-import { View } from "react-native";
+import { Image, View } from "react-native";
 import { AppColors } from "../constants/colors";
 
 interface RoomAvatarProps {
-  type?: string; // The room type (e.g. "FLIGHT", "SOURCE")
-  size?: "sm" | "md" | "lg" | "xl"; // To control sizing
-  className?: string; // To add margins or extra styles
+  type?: string; 
+  imageUrl?: string; // Optinal image URL for DMs
+  size?: "sm" | "md" | "lg" | "xl"; 
+  className?: string; 
 }
 
 export const RoomAvatar = ({
   type,
+  imageUrl,
   size = "md",
   className = "",
 }: RoomAvatarProps) => {
@@ -45,6 +48,13 @@ export const RoomAvatar = ({
         color: "#9333ea", // Purple
       };
       break;
+    case "DM":
+      iconConfig = {
+        icon: Users,
+        bgColor: "bg-teal-900/30",
+        color: "#14b8a6", // Teal
+      };
+      break;
     default:
       iconConfig = {
         icon: Building2,
@@ -59,17 +69,27 @@ export const RoomAvatar = ({
     sm: { container: "w-10 h-10", iconSize: 20 },
     md: { container: "w-12 h-12", iconSize: 24 },
     lg: { container: "w-14 h-14", iconSize: 28 },
-    xl: { container: "w-24 h-24", iconSize: 48 }, // <--- ADD THIS
+    xl: { container: "w-24 h-24", iconSize: 48 },
   };
 
   const currentSize = sizeMap[size];
   const IconComponent = iconConfig.icon;
 
+  console.log("ImageUrl:",imageUrl);
+
   return (
     <View
-      className={`${currentSize.container} rounded-full items-center justify-center ${iconConfig.bgColor} ${className}`}
+      className={`${currentSize.container} rounded-full items-center justify-center overflow-hidden ${iconConfig.bgColor} ${className}`}
     >
-      <IconComponent color={iconConfig.color} size={currentSize.iconSize} />
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+        />
+      ) : (
+        <IconComponent color={iconConfig.color} size={currentSize.iconSize} />
+      )}
     </View>
   );
 };

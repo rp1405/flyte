@@ -2,6 +2,7 @@ package com.flyte.backend.service;
 
 import com.flyte.backend.DTO.Room.RoomResponse;
 import com.flyte.backend.DTO.Room.RoomWithMessages;
+import com.flyte.backend.DTO.User.UserResponse;
 import com.flyte.backend.enums.ConnectionStatus;
 import com.flyte.backend.enums.RoomType;
 import com.flyte.backend.model.*;
@@ -22,9 +23,9 @@ public class SyncService {
     private final UserRepository userRepository;
 
     public SyncService(SyncTimeRepository syncTimeRepository,
-                       RoomParticipantRepository roomParticipantRepository,
-                       MessageRepository messageRepository,
-                       UserRepository userRepository) {
+            RoomParticipantRepository roomParticipantRepository,
+            MessageRepository messageRepository,
+            UserRepository userRepository) {
         this.syncTimeRepository = syncTimeRepository;
         this.roomParticipantRepository = roomParticipantRepository;
         this.messageRepository = messageRepository;
@@ -34,7 +35,7 @@ public class SyncService {
     @Transactional
     public List<RoomWithMessages> getSyncData(UUID userId) {
         Instant now = Instant.now();
-        
+
         // 1. Get last sync time for user
         SyncTime syncTimeObj = syncTimeRepository.findByUserId(userId)
                 .orElseGet(() -> {
@@ -50,9 +51,11 @@ public class SyncService {
         boolean isFirstSync = since.equals(Instant.EPOCH);
 
         // 2. Get all active rooms for user
-        List<Room> userRooms = roomParticipantRepository.findRoomsByUserIdAndStatusExcept(userId, ConnectionStatus.NOT_CONNECTED);
-        
-        // Filter out expired rooms (unless it's the first sync and they are still valid)
+        List<Room> userRooms = roomParticipantRepository.findRoomsByUserIdAndStatusExcept(userId,
+                ConnectionStatus.NOT_CONNECTED);
+
+        // Filter out expired rooms (unless it's the first sync and they are still
+        // valid)
         List<Room> activeRooms = userRooms.stream()
                 .filter(room -> room.getExpiryTime() == null || now.isBefore(room.getExpiryTime()))
                 .collect(Collectors.toList());
@@ -62,7 +65,8 @@ public class SyncService {
         // 3. Get new messages since last sync for those rooms
         Map<UUID, List<Message>> messagesByRoom = new HashMap<>();
         if (!roomIds.isEmpty()) {
-            List<Message> newMessages = messageRepository.findByRoom_IdInAndCreatedAtGreaterThanOrderByCreatedAtDesc(roomIds, since);
+            List<Message> newMessages = messageRepository
+                    .findByRoom_IdInAndCreatedAtGreaterThanOrderByCreatedAtDesc(roomIds, since);
             messagesByRoom = newMessages.stream().collect(Collectors.groupingBy(m -> m.getRoom().getId()));
         }
 
@@ -81,6 +85,7 @@ public class SyncService {
                     roomParticipantRepository.findOtherParticipant(room.getId(), userId, RoomType.DM)
                             .ifPresent(otherParticipant -> {
                                 roomResponse.setName(otherParticipant.getUser().getName());
+                                roomResponse.setOtherUser(new UserResponse(otherParticipant.getUser()));
                             });
                 }
 
@@ -95,5 +100,18 @@ public class SyncService {
         syncTimeRepository.save(syncTimeObj);
 
         return response;
+    }
+
+    @Transactional
+    public void resetSyncTime(UUID userId) {
+        SyncTime syncTimeObj = syncTimeRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    SyncTime st = new SyncTime();
+                    st.setUser(userRepository.findById(userId)
+                            .orElseThrow(() -> new IllegalArgumentException("User not found")));
+                    return st;
+                });
+        syncTimeObj.setSyncTime(Instant.EPOCH);
+        syncTimeRepository.save(syncTimeObj);
     }
 }

@@ -1,4 +1,3 @@
-import { NavigationContainer } from "@react-navigation/native";
 import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
@@ -42,11 +41,11 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // --- 1. SEPARATE NAVIGATION LOGIC ---
 // We need a separate component here because we can only call 'useAuth'
 // INSIDE a component that is wrapped by <AuthProvider>
+import { NavigationContainer } from "@react-navigation/native";
 import { useGlobalWebSocketListener } from "./hooks/useGlobalWebSocketListener";
 import GroupInfoScreen from "./screens/GroupInfoScreen";
-import { JourneyUser } from "./types/journey";
-import { User } from "lucide-react-native";
 import UserProfileScreen from "./screens/UserProfileScreen";
+import { JourneyUser } from "./types/journey";
 
 // ...
 
@@ -82,7 +81,6 @@ function AppNavigator() {
 
   // B. Main Navigation
   return (
-    <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           // --- AUTHENTICATED ROUTES ---
@@ -99,7 +97,6 @@ function AppNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
       </Stack.Navigator>
-    </NavigationContainer>
   );
 }
 
@@ -132,11 +129,13 @@ function App() {
   return (
     <SafeAreaProvider>
       {/* Wrap the entire logic in the Provider */}
-      <AuthProvider>
-        <ConfigProvider>
-          <AppNavigator />
-        </ConfigProvider>
-      </AuthProvider>
+      <NavigationContainer>
+        <AuthProvider>
+          <ConfigProvider>
+            <AppNavigator />
+          </ConfigProvider>
+        </AuthProvider>
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }

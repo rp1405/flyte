@@ -33,6 +33,7 @@ export const useGlobalWebSocketListener = () => {
             await roomToUpdate.update((r) => {
               // Ensure you convert to number if your schema uses number
               r.lastMessageTimestamp = new Date(event.payload.createdAt);
+              r.unreadCount = (r.unreadCount || 0) + 1;
             });
           });
 

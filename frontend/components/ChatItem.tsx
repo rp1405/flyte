@@ -36,7 +36,12 @@ const ChatItem = ({ room, latestMessage, onPress }: ChatItemProps) => {
       className="flex-row items-center p-4 border-b border-border/40 active:bg-surface"
     >
       {/* Left: Avatar */}
-      <RoomAvatar type={room.type} size="sm" className="" />
+      <RoomAvatar
+        type={room.type}
+        imageUrl={room.avatarUrl}
+        size="sm"
+        className=""
+      />
 
       {/* Middle: Title and Last Message */}
       <View className="flex-1 ml-4 justify-center">
@@ -53,7 +58,14 @@ const ChatItem = ({ room, latestMessage, onPress }: ChatItemProps) => {
 
       {/* Right: Time */}
       <View className="ml-2 items-end justify-center h-12 py-1">
-        <Text className="text-xs text-subtext">{timeDisplay}</Text>
+        <Text className="text-xs text-subtext mb-1">{timeDisplay}</Text>
+        {room.unreadCount > 0 && (
+          <View className="bg-brand rounded-full min-w-[20px] h-5 px-1.5 items-center justify-center">
+            <Text className="text-white text-[10px] font-bold">
+              {room.unreadCount > 99 ? "99+" : room.unreadCount}
+            </Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );

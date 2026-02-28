@@ -34,6 +34,10 @@ interface Props {
 const UserProfileScreen = ({ route, user: propUser }: Props) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  // ALL hooks must be called before any conditional returns (Rules of Hooks)
+  const { user: currentUser } = useAuth();
+  const [isCreatingDM, setIsCreatingDM] = useState(false);
+
   const user = propUser || route?.params?.user;
 
   if (!user) {
@@ -45,9 +49,6 @@ const UserProfileScreen = ({ route, user: propUser }: Props) => {
   }
 
   const joinedDate = new Date(user.createdAt).toLocaleDateString();
-
-  const { user: currentUser } = useAuth();
-  const [isCreatingDM, setIsCreatingDM] = useState(false);
 
   const handleMessagePress = async () => {
     if (!currentUser) return;

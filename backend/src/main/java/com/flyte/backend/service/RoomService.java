@@ -3,6 +3,7 @@ package com.flyte.backend.service;
 import com.flyte.backend.DTO.Room.RoomRequest;
 import com.flyte.backend.DTO.Room.RoomResponse;
 import com.flyte.backend.DTO.Room.RoomWithMessages;
+import com.flyte.backend.DTO.User.UserResponse;
 import com.flyte.backend.model.Message;
 import com.flyte.backend.model.Room;
 import com.flyte.backend.model.User;
@@ -89,6 +90,7 @@ public class RoomService {
                 roomParticipantRepository.findOtherParticipant(room.getId(), userId, RoomType.DM)
                         .ifPresent(otherParticipant -> {
                             roomResponse.setName(otherParticipant.getUser().getName());
+                            roomResponse.setOtherUser(new UserResponse(otherParticipant.getUser()));
                         });
             }
 
@@ -114,7 +116,10 @@ public class RoomService {
         Room existingDM = existingRooms.isEmpty() ? null : existingRooms.get(0);
         if (existingDM != null) {
             RoomResponse response = new RoomResponse(existingDM);
-            userRepository.findById(request.getTargetUserId()).ifPresent(user -> response.setName(user.getName()));
+            userRepository.findById(request.getTargetUserId()).ifPresent(user -> {
+                response.setName(user.getName());
+                response.setOtherUser(new UserResponse(user));
+            });
             return response;
         }
 
@@ -145,6 +150,7 @@ public class RoomService {
 
         RoomResponse response = new RoomResponse(savedRoom);
         response.setName(target.getName());
+        response.setOtherUser(new UserResponse(target));
         return response;
     }
 
@@ -155,7 +161,13 @@ public class RoomService {
 
         List<RoomResponse> responses = new ArrayList<>();
         for (RoomParticipant p : participants) {
-            responses.add(new RoomResponse(p.getRoom()));
+            RoomResponse resp = new RoomResponse(p.getRoom());
+            roomParticipantRepository.findOtherParticipant(p.getRoom().getId(), userId, RoomType.DM)
+                    .ifPresent(other -> {
+                        resp.setName(other.getUser().getName());
+                        resp.setOtherUser(new UserResponse(other.getUser()));
+                    });
+            responses.add(resp);
         }
         return responses;
     }
@@ -171,7 +183,10 @@ public class RoomService {
 
         roomParticipantRepository.save(otherParticipant);
         roomParticipantRepository.save(selfParticipant);
-        return new RoomResponse(otherParticipant.getRoom());
+        RoomResponse response = new RoomResponse(otherParticipant.getRoom());
+        response.setName(otherParticipant.getUser().getName());
+        response.setOtherUser(new UserResponse(otherParticipant.getUser()));
+        return response;
     }
 
     public RoomResponse rejectDM(UUID userId, UUID roomId) {
@@ -185,7 +200,10 @@ public class RoomService {
 
         roomParticipantRepository.save(otherParticipant);
         roomParticipantRepository.save(selfParticipant);
-        return new RoomResponse(otherParticipant.getRoom());
+        RoomResponse response = new RoomResponse(otherParticipant.getRoom());
+        response.setName(otherParticipant.getUser().getName());
+        response.setOtherUser(new UserResponse(otherParticipant.getUser()));
+        return response;
     }
 
     public ConnectionStatus getRoomStatus(UUID roomId, UUID userId) {

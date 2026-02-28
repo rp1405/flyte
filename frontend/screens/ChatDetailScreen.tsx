@@ -56,7 +56,15 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
     if (room.type?.toLowerCase() === "dm" || room.type === "direct") {
       fetchDmStatus();
     }
-  }, [room.id]);
+    // Reset unread count when entering the room
+    if (room.unreadCount > 0) {
+      database.write(async () => {
+        await room.update((r) => {
+          r.unreadCount = 0;
+        });
+      });
+    }
+  }, [room.id, room.unreadCount]);
 
   const fetchDmStatus = async () => {
     try {
@@ -154,7 +162,12 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
           <ChevronLeft color={AppColors.text} size={28} />
         </TouchableOpacity>
 
-        <RoomAvatar type={room.type} size="sm" className="mr-3" />
+        <RoomAvatar
+          type={room.type}
+          imageUrl={room.avatarUrl}
+          size="sm"
+          className="mr-3"
+        />
 
         <View className="flex-1">
           <TouchableOpacity

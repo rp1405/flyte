@@ -156,7 +156,12 @@ const GroupInfoScreen = ({ room }: GroupInfoScreenProps) => {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* 1. HERO SECTION */}
         <View className="items-center py-6 border-b border-border/50 bg-surface/30">
-          <RoomAvatar type={room.type} size="xl" className="mb-4" />
+          <RoomAvatar
+            type={room.type}
+            imageUrl={room.avatarUrl}
+            size="xl"
+            className="mb-4"
+          />
 
           <Text className="text-2xl font-bold text-text text-center px-6">
             {room.name}

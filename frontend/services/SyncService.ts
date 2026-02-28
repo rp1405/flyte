@@ -16,23 +16,25 @@ interface ApiUser {
 
 interface ApiMessage {
   id: string;
-  messageText: string; // JSON: "messageText" -> DB: "text"
-  createdAt: string; // JSON: "createdAt"   -> DB: "timestamp"
+  messageText: string;
+  createdAt: string;
   mediaType: string;
   mediaLink?: string;
-  user: ApiUser; // Nested user object for sender info
+  user: ApiUser;
   roomId: string;
+  room?: ApiRoomDetails;
 }
 
 interface ApiRoomDetails {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   type: string;
-  expiryTime: string;
-  createdAt: string;
-  updatedAt: string;
-  lastMessageTimestamp: string;
+  expiryTime?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  lastMessageTimestamp?: string | null;
+  otherUser?: ApiUser; 
 }
 
 // The root item in the response array
@@ -50,7 +52,7 @@ export class SyncService {
 
       // A. Fetch from Backend
       const response = await RequestExecutor.get<RoomWithMessagesResponse[]>(
-        `/api/rooms/getRoomsAndMessagesByUserId?userId=${userId}`,
+        `/api/sync/getSyncData?userId=${userId}`,
       );
 
       if (!response.success || !response.data) {
@@ -90,81 +92,131 @@ export class SyncService {
       }
       // ---------------------------------------------------------
 
-      // Extract all Room IDs from the nested 'room' object
-      const roomIdsToSync = apiResponseList.map((item) => item.room.id);
-
-      // B. Database Transaction (Wipe & Replace)
+      // B. Database Transaction (Incremental Sync)
       await database.write(async () => {
         const roomsCollection = database.get<Room>(Room.table);
         const messagesCollection = database.get<Message>(Message.table);
 
-        // 1. Find existing records to delete (Clean Slate)
-        const existingRooms = await roomsCollection
-          .query(Q.where("id", Q.oneOf(roomIdsToSync)))
-          .fetch();
+        // 1. Fetch all local rooms to decide what remains
+        const allLocalRooms = await roomsCollection.query().fetch();
+        const existingRoomsMap = new Map(allLocalRooms.map((r) => [r.id, r]));
 
-        const existingMessages = await messagesCollection
-          .query(Q.where("room_id", Q.oneOf(roomIdsToSync)))
-          .fetch();
+        // 2. Identify rooms to delete (present locally but not in the sync response)
+        const roomIdsInResponse = new Set(
+          apiResponseList.map((item) => item.room.id),
+        );
+        const roomsToDelete = allLocalRooms.filter(
+          (r) => !roomIdsInResponse.has(r.id),
+        );
+        const roomsToDeleteIds = roomsToDelete.map((r) => r.id);
 
-        // 2. Delete them
-        const deleteOperations = [
-          ...existingMessages.map((m) => m.prepareDestroyPermanently()),
-          ...existingRooms.map((r) => r.prepareDestroyPermanently()),
-        ];
+        const operations: any[] = [];
 
-        if (deleteOperations.length > 0) {
-          await database.batch(deleteOperations);
+        // 3. Prepare Delete Operations for stale rooms and their messages
+        if (roomsToDeleteIds.length > 0) {
+          const messagesToDelete = await messagesCollection
+            .query(Q.where("room_id", Q.oneOf(roomsToDeleteIds)))
+            .fetch();
+
+          operations.push(
+            ...messagesToDelete.map((m) => m.prepareDestroyPermanently()),
+          );
+          operations.push(
+            ...roomsToDelete.map((r) => r.prepareDestroyPermanently()),
+          );
         }
 
-        // 3. Create New Records
-        const createOperations: any[] = [];
+        // 4. Pre-fetch existing message IDs to prevent primary key collision on "push"
+        const allApiMessageIds = apiResponseList.flatMap((item) =>
+          item.messages.map((m) => m.id),
+        );
+        let existingMessageIds = new Set<string>();
+        if (allApiMessageIds.length > 0) {
+          const existingMsgs = await messagesCollection
+            .query(Q.where("id", Q.oneOf(allApiMessageIds)))
+            .fetch();
+          existingMessageIds = new Set(existingMsgs.map((m) => m.id));
+        }
 
+        // 5. Prepare Upsert for Rooms and Create for New Messages
         for (const item of apiResponseList) {
           const apiRoom = item.room;
           const apiMessages = item.messages;
+          const existingRoom = existingRoomsMap.get(apiRoom.id);
 
-          // Prepare Room Creation
-          createOperations.push(
-            roomsCollection.prepareCreate((r) => {
-              r._raw.id = apiRoom.id; // Map 'id'
-              r.name = apiRoom.name;
-              r.description = apiRoom.description;
-              r.type = apiRoom.type;
-              r.createdAt = new Date(apiRoom.createdAt);
-              r.expiryTime = new Date(apiRoom.expiryTime);
-              r.updatedAt = new Date(apiRoom.updatedAt);
-              r.lastMessageTimestamp = new Date(apiRoom.lastMessageTimestamp);
-            }),
-          );
+          // FALLBACK: The top-level 'room' in your JSON is missing dates.
+          // We can find them inside the room object attached to messages if available.
+          const fullRoomData = (apiMessages && apiMessages.length > 0 && apiMessages[0].room) ? apiMessages[0].room : apiRoom;
 
-          // Prepare Message Creation
+          const parseDate = (d: any) => {
+            const date = new Date(d);
+            return isNaN(date.getTime()) ? new Date() : date;
+          };
+
+          // Push new messages (since sync returns "data after last sync")
+          let newMessagesCount = 0;
           if (apiMessages && apiMessages.length > 0) {
             for (const msg of apiMessages) {
-              createOperations.push(
+              // Skip if message ID already exists locally
+              if (existingMessageIds.has(msg.id)) continue;
+
+              newMessagesCount++;
+              operations.push(
                 messagesCollection.prepareCreate((m) => {
                   m._raw.id = msg.id;
-                  m.room.id = apiRoom.id; // Link to Room ID
-
-                  // Map Sender Info from nested 'user' object
+                  m.room.id = apiRoom.id;
                   m.senderId = msg.user.id;
                   m.senderName =
                     msg.user.name || msg.user.nickname || "Unknown";
-
-                  // Map Message Content
                   m.text = msg.messageText;
-                  m.timestamp = new Date(msg.createdAt);
+                  m.timestamp = parseDate(msg.createdAt);
                   m.mediaType = msg.mediaType;
                   m.mediaLink = msg.mediaLink;
                 }),
               );
             }
           }
+
+          const applyMetadata = (r: Room) => {
+            r.name = apiRoom.name;
+            r.description = apiRoom.description || "";
+            r.type = apiRoom.type;
+            r.createdAt = parseDate(fullRoomData.createdAt);
+            r.expiryTime = parseDate(fullRoomData.expiryTime);
+            r.updatedAt = parseDate(fullRoomData.updatedAt);
+            r.lastMessageTimestamp = parseDate(fullRoomData.lastMessageTimestamp);
+
+            // Update avatar if provided (typical for DMs)
+            if (apiRoom.otherUser?.profilePictureUrl) {
+              r.avatarUrl = apiRoom.otherUser.profilePictureUrl;
+            }
+          };
+
+          if (existingRoom) {
+            // Update existing room metadata
+            operations.push(
+              existingRoom.prepareUpdate((r) => {
+                applyMetadata(r);
+                if (newMessagesCount > 0) {
+                  r.unreadCount = (r.unreadCount || 0) + newMessagesCount;
+                }
+              }),
+            );
+          } else {
+            // Create new room if it doesn't exist locally
+            operations.push(
+              roomsCollection.prepareCreate((r) => {
+                r._raw.id = apiRoom.id;
+                applyMetadata(r);
+                r.unreadCount = newMessagesCount;
+              }),
+            );
+          }
         }
 
-        // Execute the Create Batch
-        if (createOperations.length > 0) {
-          await database.batch(createOperations);
+        // 6. Execute all operations in a single batch for performance
+        if (operations.length > 0) {
+          await database.batch(operations);
         }
       });
 
