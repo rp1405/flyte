@@ -1,17 +1,17 @@
 import { useAuth } from "@/context/AuthContext";
 import {
-  GoogleSignin,
-  statusCodes,
+    GoogleSignin,
+    statusCodes,
 } from "@react-native-google-signin/google-signin";
 import { Plane } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
@@ -83,7 +83,7 @@ export default function LoginScreen({ navigation }: any) {
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-1 justify-center items-center px-6">
         <View className="items-center mb-10 w-full">
-          <View className="w-16 h-16 bg-brand rounded-2xl justify-center items-center mb-4 shadow-lg shadow-brand/20">
+          <View className="w-16 h-16 bg-brand rounded-2xl justify-center items-center mb-4">
             <Plane color={AppColors.iconWhite} size={32} />
           </View>
           <Text className="text-3xl font-bold text-text text-center">
@@ -94,7 +94,7 @@ export default function LoginScreen({ navigation }: any) {
           </Text>
         </View>
 
-        <View className="bg-surface p-8 rounded-3xl w-full border border-border shadow-xl shadow-black/50">
+        <View className="bg-surface p-8 rounded-3xl w-full border border-border">
           <Text className="text-xl font-semibold text-center mb-8 text-text">
             Sign in to continue
           </Text>

@@ -125,7 +125,7 @@ export default function HomeScreen() {
         </View>
 
         {/* --- Journey Creator Widget --- */}
-        <View className="bg-surface p-6 rounded-3xl border border-border shadow-sm mb-6">
+        <View className="bg-surface p-6 rounded-3xl border border-border mb-6">
           <View className="flex-row">
             <Text className="text-lg font-semibold text-text mb-4 flex-row items-center">
               <MapPin
@@ -236,7 +236,7 @@ export default function HomeScreen() {
               <ActivityIndicator color={AppColors.brand} size="small" />
             </View>
           ) : latestRoom ? (
-            <View className="bg-surface rounded-2xl border border-border overflow-hidden shadow-sm">
+            <View className="bg-surface rounded-2xl border border-border overflow-hidden">
               <ChatItem
                 room={latestRoom}
                 onPress={() =>

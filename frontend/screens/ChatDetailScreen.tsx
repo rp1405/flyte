@@ -2,13 +2,13 @@ import { RouteProp, useNavigation } from "@react-navigation/native";
 import { ChevronLeft, MoreVertical, Send } from "lucide-react-native";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    FlatList,
+    KeyboardAvoidingView,
+    Platform,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
@@ -26,8 +26,8 @@ import Message from "../db/models/Message";
 import Room from "../db/models/Room";
 import { useChatWebSocket } from "../hooks/useChatWebsocket";
 import {
-  ConnectionStatus,
-  DirectMessageService,
+    ConnectionStatus,
+    DirectMessageService,
 } from "../services/DirectMessageService";
 import { BackendMessage } from "../types/message";
 
@@ -154,7 +154,7 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       {/* --- 2. UPDATED HEADER --- */}
-      <View className="px-4 py-3 bg-background border-b border-border flex-row items-center z-10 shadow-sm">
+      <View className="px-4 py-3 bg-background border-b border-border flex-row items-center z-10">
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           className="mr-3 p-1"

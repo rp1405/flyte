@@ -1,16 +1,16 @@
+import DateTimePicker, {
+    DateTimePickerEvent,
+} from "@react-native-community/datetimepicker";
+import { Clock } from "lucide-react-native";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Platform,
-  Modal,
-  TouchableWithoutFeedback,
+    Modal,
+    Platform,
+    Text,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
 } from "react-native";
-import { Clock } from "lucide-react-native";
-import DateTimePicker, {
-  DateTimePickerEvent,
-} from "@react-native-community/datetimepicker";
 import { AppColors } from "../constants/colors";
 
 // --- Props Interface ---
@@ -160,7 +160,7 @@ const DateTimePickerSection = ({
         <TouchableWithoutFeedback onPress={() => setVisible(false)}>
           <View className="flex-1 justify-end bg-black/50">
             <TouchableWithoutFeedback>
-              <View className="bg-surface pb-8 pt-4 rounded-t-3xl shadow-xl">
+              <View className="bg-surface pb-8 pt-4 rounded-t-3xl">
                 <View className="flex-row justify-between px-6 mb-2 border-b border-border/30 pb-4 items-center">
                   <Text className="text-text text-lg font-semibold">
                     Select {type === "dep" ? "Departure" : "Arrival"}

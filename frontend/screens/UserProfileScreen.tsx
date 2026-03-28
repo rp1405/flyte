@@ -97,7 +97,7 @@ const UserProfileScreen = ({ route, user: propUser }: Props) => {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* 1. HERO SECTION */}
         <View className="items-center py-8 border-b border-border/50 bg-surface/30">
-          <View className="w-24 h-24 bg-surface border border-border rounded-full items-center justify-center mb-4 overflow-hidden shadow-sm">
+          <View className="w-24 h-24 bg-surface border border-border rounded-full items-center justify-center mb-4 overflow-hidden">
             {user.profilePictureUrl ? (
               <Image
                 source={{ uri: user.profilePictureUrl }}
@@ -123,7 +123,7 @@ const UserProfileScreen = ({ route, user: propUser }: Props) => {
         {/* 2. ACTIONS */}
         <View className="flex-row justify-center py-6 px-6 border-b border-border/50">
           <TouchableOpacity
-            className="flex-1 bg-brand py-3 rounded-xl flex-row items-center justify-center mr-2 shadow-sm active:opacity-90"
+            className="flex-1 bg-brand py-3 rounded-xl flex-row items-center justify-center mr-2 active:opacity-90"
             onPress={handleMessagePress}
             disabled={isCreatingDM}
           >

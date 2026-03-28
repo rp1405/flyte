@@ -39,7 +39,7 @@ const MessageBubble = ({
 
       {/* --- BUBBLE --- */}
       <View
-        className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-sm ${
+        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
           isMe
             ? "bg-brand rounded-tr-none self-end" // Your Bubble (Right)
             : "bg-surface border border-border rounded-tl-none self-start" // Their Bubble (Left)

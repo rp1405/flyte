@@ -22,7 +22,7 @@ export const ConnectionStatusBanner = ({
   if (status === "CONNECTED") return null;
 
   return (
-    <View className="px-4 py-4 bg-surface border-b border-border shadow-sm">
+    <View className="px-4 py-4 bg-surface border-b border-border">
       <View className="flex-row items-center mb-3">
         <View className="w-8 h-8 rounded-full bg-brand/10 items-center justify-center mr-3">
           <Info size={16} color={AppColors.brand} />
