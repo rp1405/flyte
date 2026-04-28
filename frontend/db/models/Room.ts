@@ -1,5 +1,5 @@
 import { Model, Q, Query } from "@nozbe/watermelondb";
-import { children, date, text } from "@nozbe/watermelondb/decorators";
+import { children, date, field, text } from "@nozbe/watermelondb/decorators";
 import Message from "./Message";
 
 export default class Room extends Model {
@@ -12,6 +12,8 @@ export default class Room extends Model {
   @text("name") name!: string;
   @text("description") description!: string;
   @text("type") type!: string;
+  @field("unread_count") unreadCount!: number;
+  @text("avatar_url") avatarUrl?: string;
 
   // Storing dates as strings per your request (ISO format)
   @date("expiry_time") expiryTime!: Date;

@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import { View, Text } from "react-native";
+import { Text, View } from "react-native";
 import Message from "../db/models/Message";
 
 interface MessageBubbleProps {
@@ -18,25 +18,43 @@ const MessageBubble = ({
     minute: "2-digit",
   });
 
-  console.log("Rendering MessageBubble:");
-
+  // Decide if we should show the name
+  // 1. It must NOT be me (we don't show our own name)
+  // 2. It must be a different sender than the message visually above it
+  const showName = !isMe && !isSameSenderAsPrevious;
+  //console.log("rendering")
   return (
     <View
-      className={`my-1 px-4 w-full flex-row ${isMe ? "justify-end" : "justify-start"}`}
-      style={{ marginTop: isSameSenderAsPrevious ? 4 : 12 }}
+      className={`w-full px-4 mb-2 flex-col ${
+        isMe ? "items-end" : "items-start"
+      }`}
+      style={{ marginTop: isSameSenderAsPrevious ? 2 : 10 }}
     >
+      {/* --- SENDER NAME LABEL --- */}
+      {showName && (
+        <Text className="text-xs text-subtext ml-1 mb-1 font-medium">
+          {item.senderName || "Unknown"}
+        </Text>
+      )}
+
+      {/* --- BUBBLE --- */}
       <View
-        className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+        className={`max-w-[80%] rounded-2xl px-4 py-3 ${
           isMe
-            ? "bg-brand rounded-tr-none"
-            : "bg-surface border border-border rounded-tl-none"
+            ? "bg-brand rounded-tr-none self-end" // Your Bubble (Right)
+            : "bg-surface border border-border rounded-tl-none self-start" // Their Bubble (Left)
         }`}
       >
-        <Text className={`text-base ${isMe ? "text-white" : "text-text"}`}>
+        <Text
+          className={`text-base leading-5 ${isMe ? "text-white" : "text-text"}`}
+        >
           {item.text}
         </Text>
+
         <Text
-          className={`text-[10px] text-right mt-1 ${isMe ? "text-white/70" : "text-subtext"}`}
+          className={`text-[10px] text-right mt-1 ${
+            isMe ? "text-white/70" : "text-subtext"
+          }`}
         >
           {timeStr}
         </Text>
@@ -45,5 +63,5 @@ const MessageBubble = ({
   );
 };
 
-// React.memo prevents re-renders if props (item, isMe, etc) haven't changed
+// React.memo is crucial for performance in chat lists
 export default memo(MessageBubble);

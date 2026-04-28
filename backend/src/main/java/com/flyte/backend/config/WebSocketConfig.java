@@ -15,23 +15,25 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private AuthChannelInterceptor authChannelInterceptor;
 
-    public WebSocketConfig(AuthChannelInterceptor authChannelInterceptor){
+    public WebSocketConfig(AuthChannelInterceptor authChannelInterceptor) {
         this.authChannelInterceptor = authChannelInterceptor;
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // The endpoint clients will connect to
-        registry.addEndpoint("/ws").withSockJS(); 
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // Prefix for server-to-client messages (broadcasts)
-        registry.enableSimpleBroker("/topic"); 
-        
+        registry.enableSimpleBroker("/topic");
+
         // Prefix for client-to-server messages (handled by @MessageMapping)
-        registry.setApplicationDestinationPrefixes("/app"); 
+        registry.setApplicationDestinationPrefixes("/app");
     }
 
     @Override

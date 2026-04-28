@@ -1,4 +1,3 @@
-import { NavigationContainer } from "@react-navigation/native";
 import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
@@ -28,6 +27,10 @@ export type RootStackParamList = {
     avatarUrl?: string;
     userId: string;
   };
+  GroupInfo: {
+    roomId: string;
+  };
+  UserProfile: { user: JourneyUser };
 };
 
 export type RootStackNavigationProp =
@@ -38,8 +41,19 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 // --- 1. SEPARATE NAVIGATION LOGIC ---
 // We need a separate component here because we can only call 'useAuth'
 // INSIDE a component that is wrapped by <AuthProvider>
+import { NavigationContainer } from "@react-navigation/native";
+import { useGlobalWebSocketListener } from "./hooks/useGlobalWebSocketListener";
+import GroupInfoScreen from "./screens/GroupInfoScreen";
+import UserProfileScreen from "./screens/UserProfileScreen";
+import { JourneyUser } from "./types/journey";
+
+// ...
+
 function AppNavigator() {
   const { user, isAuthLoading } = useAuth();
+  
+  // Initialize Global WebSocket Listener
+  useGlobalWebSocketListener();
 
   // Example usage in HomeScreen.tsx
   useEffect(() => {
@@ -67,7 +81,6 @@ function AppNavigator() {
 
   // B. Main Navigation
   return (
-    <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {user ? (
           // --- AUTHENTICATED ROUTES ---
@@ -75,6 +88,8 @@ function AppNavigator() {
           <>
             <Stack.Screen name="MainTabs" component={TabNavigator} />
             <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+            <Stack.Screen name="GroupInfo" component={GroupInfoScreen} />
+            <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           </>
         ) : (
           // --- GUEST ROUTES ---
@@ -82,7 +97,6 @@ function AppNavigator() {
           <Stack.Screen name="Login" component={LoginScreen} />
         )}
       </Stack.Navigator>
-    </NavigationContainer>
   );
 }
 
@@ -115,11 +129,13 @@ function App() {
   return (
     <SafeAreaProvider>
       {/* Wrap the entire logic in the Provider */}
-      <AuthProvider>
-        <ConfigProvider>
-          <AppNavigator />
-        </ConfigProvider>
-      </AuthProvider>
+      <NavigationContainer>
+        <AuthProvider>
+          <ConfigProvider>
+            <AppNavigator />
+          </ConfigProvider>
+        </AuthProvider>
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }

@@ -1,6 +1,9 @@
 import UserData from "@/types/UserData";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { database as localDb } from "../db"; // Your initialized WatermelonDB instance
+import Message from "../db/models/Message";
+import Room from "../db/models/Room";
 import User from "../db/models/User"; // Rename import to avoid clash with interface
 
 interface AuthContextType {
@@ -20,6 +23,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Load data on app startup
   useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
+      offlineAccess: true,
+    });
     loadUserFromDB();
   }, []);
 
@@ -48,11 +55,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const login = async (newToken: string, userData: UserData) => {
-    setIsAuthLoading(true);
     try {
       await localDb.write(async () => {
-        // 1. OPTIONAL: Clear any existing users to ensure only 1 active user
-        // (If your app supports multi-account, skip this)
+        // 1. Clear any existing users to ensure only 1 active user
         const allUsers = await localDb.get<User>("users").query().fetch();
         const deleteOps = allUsers.map((u) => u.prepareDestroyPermanently());
 
@@ -70,35 +75,59 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await localDb.batch(...deleteOps, createUserOp);
       });
 
-      // Update Local State
+      // Update Local State — this triggers the nav switch to MainTabs
       setToken(newToken);
       setUser(userData);
     } catch (e) {
       console.error("Login error", e);
-    } finally {
-      setIsAuthLoading(false);
     }
   };
 
   const logout = async () => {
-    setIsAuthLoading(true);
     try {
       await localDb.write(async () => {
-        // Wipe the users table
+        // 1. Fetch all records from all tables you want to clear
         const allUsers = await localDb.get<User>("users").query().fetch();
-        // batch delete is faster than iterating with await
-        const deleteOps = allUsers.map((user) =>
-          user.prepareDestroyPermanently()
+        const allRooms = await localDb.get<Room>("rooms").query().fetch();
+        const allMessages = await localDb
+          .get<Message>("messages")
+          .query()
+          .fetch();
+
+        // 2. Prepare Destroy Operations for each collection
+        const userDeleteOps = allUsers.map((u) =>
+          u.prepareDestroyPermanently(),
         );
-        await localDb.batch(...deleteOps);
+        const roomDeleteOps = allRooms.map((r) =>
+          r.prepareDestroyPermanently(),
+        );
+        const msgDeleteOps = allMessages.map((m) =>
+          m.prepareDestroyPermanently(),
+        );
+
+        // 3. Combine into a single batch operation
+        const allOperations = [
+          ...userDeleteOps,
+          ...roomDeleteOps,
+          ...msgDeleteOps,
+        ];
+
+        if (allOperations.length > 0) {
+          await localDb.batch(...allOperations);
+        }
       });
 
+      try {
+        await GoogleSignin.signOut();
+      } catch (error) {
+        console.log("Google signout ignored:", error);
+      }
+
+      // Update Local State — this triggers the nav switch to Login
       setToken(null);
       setUser(null);
     } catch (e) {
       console.error("Logout error", e);
-    } finally {
-      setIsAuthLoading(false);
     }
   };
 
@@ -111,6 +140,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }

@@ -150,7 +150,7 @@
       var currentRoomId = null;
 
       // Hardcoded userId for testing
-      var currentUserId = "8ecceabd-5022-4cad-ad8e-6e5f40acec25";
+      var currentUserId = "c339e792-4ece-4d6e-99a9-0faedca20d5b";
 
       // Helper function to get query parameters from the URL
       function getQueryParam(name) {
@@ -176,7 +176,7 @@
       }
 
       function connect() {
-        currentRoomId = document.getElementById("roomId").value;
+        currentRoomId = document.getElementById("roomId").value.trim();
         if (!currentRoomId) {
           alert("Please enter a Room ID");
           return;
@@ -212,12 +212,16 @@
             var subscriptionUrl = "/topic/room/" + currentRoomId;
             stompClient.subscribe(subscriptionUrl, function (message) {
               var broadcastMessage = JSON.parse(message.body);
-              // Match the fields in your ServerMessage DTO
-              var display =
-                broadcastMessage.senderUserName +
-                ": " +
-                broadcastMessage.messageText;
-              showMessage(display, "client");
+              
+              // The service broadcasts a Message entity: { user: { name: "...", id: "..." }, messageText: "..." }
+              var senderName = broadcastMessage.user ? broadcastMessage.user.name : "Unknown";
+              var senderId = broadcastMessage.user ? broadcastMessage.user.id : null;
+              
+              var display = senderName + ": " + broadcastMessage.messageText;
+              
+              // Decide style: if currentUserId is the sender, show on right (client), else on left (server)
+              var styleType = (senderId === currentUserId) ? "client" : "server";
+              showMessage(display, styleType);
             });
           },
           function (error) {

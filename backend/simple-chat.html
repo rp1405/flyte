@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Tester</title>
+    <!-- Use SockJS and STOMP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f4; }
+        .box { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .log-box { height: 400px; overflow-y: scroll; border: 1px solid #eee; background: #fff; padding: 10px; border-radius: 4px; }
+        
+        .msg { margin: 8px 0; padding: 8px; border-radius: 6px; font-size: 14px; }
+        .my-msg { background-color: #e3f2fd; color: #0d47a1; text-align: left; border-left: 5px solid #2196f3; }
+        .other-msg { background-color: #e8f5e9; color: #1b5e20; text-align: left; border-left: 5px solid #4caf50; }
+        .notification-msg { background-color: #fff3e0; color: #e65100; border-left: 5px solid #ff9800; }
+
+        input[type="text"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 16px; background-color: #2196f3; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        button:hover:not(:disabled) { background-color: #1976d2; }
+
+        .status { font-weight: bold; margin-left: 10px; }
+        .status.connected { color: green; }
+        .status.error { color: red; }
+    </style>
+</head>
+<body>
+
+    <h2>Flyte Dual-Channel Chat Tester</h2>
+
+    <div class="box">
+        <h3>1. Connection Details</h3>
+        <label>My User ID:</label>
+        <input type="text" id="userId" placeholder="UUID" style="width: 280px;" value="">
+        <br><br>
+        <label>Room ID:</label>
+        <input type="text" id="roomId" placeholder="UUID" style="width: 280px;" value="">
+        <br><br>
+        <button onclick="connect()">Connect to WebSocket</button>
+        <span id="status" class="status">Disconnected</span>
+    </div>
+
+    <div class="box">
+        <h3>2. Send Message (to Room)</h3>
+        <input type="text" id="msg" placeholder="Type a message..." style="width: 300px;">
+        <button onclick="send()" id="btnSend" disabled>Send</button>
+    </div>
+
+    <div style="display: flex; gap: 20px;">
+        <!-- Box 1: Room Chat -->
+        <div style="flex: 1;">
+            <h3>Room Channel (/topic/room/...)</h3>
+            <div id="roomMessages" class="log-box"></div>
+        </div>
+
+        <!-- Box 2: User Notifications -->
+        <div style="flex: 1;">
+            <h3>User Notifications (/topic/user/...)</h3>
+            <div id="userMessages" class="log-box">
+                <div style="color: grey; font-style: italic; font-size: 0.9em; padding: 5px;">
+                    (You will receive messages here when OTHERS send to a room you are in)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stompClient = null;
+        let myUserId = null;
+        let myRoomId = null;
+
+        function connect() {
+            myUserId = document.getElementById('userId').value.trim();
+            myRoomId = document.getElementById('roomId').value.trim();
+
+            if (!myUserId || !myRoomId) {
+                alert("Please enter both User ID and Room ID");
+                return;
+            }
+
+            const socket = new SockJS('http://localhost:8080/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null; // Hide debug logs
+
+            stompClient.connect({}, function (frame) {
+                document.getElementById('status').innerText = 'Connected';
+                document.getElementById('status').className = 'status connected';
+                document.getElementById('btnSend').disabled = false;
+                
+                console.log('Connected: ' + frame);
+
+                // 1. Subscribe to Room Chat
+                stompClient.subscribe('/topic/room/' + myRoomId, function (messageOutput) {
+                    const msg = JSON.parse(messageOutput.body);
+                    showRoomMessage(msg);
+                });
+
+                // 2. Subscribe to User Notifications
+                stompClient.subscribe('/topic/user/' + myUserId, function (envelopeOutput) {
+                    const envelope = JSON.parse(envelopeOutput.body);
+                    // The actual message is inside the 'payload' field of the envelope
+                    if (envelope.type === 'CHAT_NOTIFICATION') {
+                        showUserMessage(envelope.payload);
+                    } else {
+                        console.log("Received other notification type:", envelope.type);
+                    }
+                });
+
+            }, function (error) {
+                document.getElementById('status').innerText = 'Error: ' + error;
+                document.getElementById('status').className = 'status error';
+            });
+        }
+
+        function send() {
+            const text = document.getElementById('msg').value;
+            if (!stompClient || !text) return;
+
+            const payload = {
+                userId: myUserId,
+                messageText: text,
+                messageHTML: "<p>" + text + "</p>",
+                mediaType: "TEXT",
+                mediaLink: null
+            };
+
+            stompClient.send("/app/chat.send/" + myRoomId, {}, JSON.stringify(payload));
+            document.getElementById('msg').value = '';
+        }
+
+        function showRoomMessage(msg) {
+            const container = document.getElementById('roomMessages');
+            const div = document.createElement('div');
+            
+            // Check if I sent this
+            const isMe = (msg.user && msg.user.id === myUserId) || (msg.userId === myUserId);
+            const senderName = isMe ? "Me" : (msg.user ? msg.user.name : "Unknown");
+
+            div.className = 'msg ' + (isMe ? 'my-msg' : 'other-msg');
+            div.innerHTML = `<strong>${senderName}:</strong> <pre style="margin: 5px 0; font-size: 0.85em;">${JSON.stringify(msg, null, 2)}</pre>`;
+            
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showUserMessage(msg) {
+            const container = document.getElementById('userMessages');
+            const div = document.createElement('div');
+
+            // Notifications usually come from others
+            const senderName = msg.user ? msg.user.name : "Unknown";
+            
+            div.className = 'msg notification-msg';
+            div.innerHTML = `<strong>New from ${senderName}:</strong> <pre style="margin: 5px 0; font-size: 0.85em;">${JSON.stringify(msg, null, 2)}</pre>`;
+
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>

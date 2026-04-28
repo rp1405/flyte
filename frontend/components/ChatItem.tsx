@@ -3,15 +3,9 @@ import Room from "@/db/models/Room";
 import { Q } from "@nozbe/watermelondb";
 import { withObservables } from "@nozbe/watermelondb/react";
 import { map } from "@nozbe/watermelondb/utils/rx";
-import {
-  Building2,
-  Plane,
-  PlaneLanding,
-  PlaneTakeoff,
-} from "lucide-react-native";
 import React from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import { AppColors } from "../constants/colors"; // Ensure this path is correct
+import { RoomAvatar } from "./RoomAvatar"; // Import the new RoomAvatar component
 
 // 1. UPDATED PROPS: Expect the DB Models instead of plain JSON
 export interface ChatItemProps {
@@ -35,67 +29,6 @@ const ChatItem = ({ room, latestMessage, onPress }: ChatItemProps) => {
       })
     : "";
 
-  // --- HELPER 2: Icon Logic (Moved here to keep it self-contained) ---
-  const renderAvatar = () => {
-    // If it is a group (Room types usually map to groups in your logic)
-    // You can adjust this condition if you have 'direct' types in your DB
-    if (true) {
-      const typeUpper = room.type?.toUpperCase();
-      let iconConfig;
-
-      switch (typeUpper) {
-        case "SOURCE":
-          iconConfig = {
-            icon: PlaneTakeoff,
-            bgColor: "bg-blue-900/30",
-            color: AppColors.brand,
-          };
-          break;
-        case "DESTINATION":
-          iconConfig = {
-            icon: PlaneLanding,
-            bgColor: "bg-orange-900/30",
-            color: "#f97316",
-          };
-          break;
-        case "FLIGHT":
-          iconConfig = {
-            icon: Plane,
-            bgColor: "bg-purple-900/30",
-            color: "#9333ea",
-          };
-          break;
-        default:
-          iconConfig = {
-            icon: Building2,
-            bgColor: "bg-slate-800/30",
-            color: AppColors.subtext,
-          };
-          break;
-      }
-
-      const Icon = iconConfig.icon;
-
-      return (
-        <View
-          className={`w-14 h-14 ${iconConfig.bgColor} rounded-full items-center justify-center`}
-        >
-          <Icon color={iconConfig.color} size={24} />
-        </View>
-      );
-    }
-    // Fallback for direct messages (if you add avatarUrl to Room schema later)
-    /* else {
-      return (
-        <Image
-          source={{ uri: room.avatarUrl }} 
-          className="w-14 h-14 rounded-full border border-border bg-surface"
-        />
-      );
-    }
-    */
-  };
-
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -103,7 +36,12 @@ const ChatItem = ({ room, latestMessage, onPress }: ChatItemProps) => {
       className="flex-row items-center p-4 border-b border-border/40 active:bg-surface"
     >
       {/* Left: Avatar */}
-      {renderAvatar()}
+      <RoomAvatar
+        type={room.type}
+        imageUrl={room.avatarUrl}
+        size="sm"
+        className=""
+      />
 
       {/* Middle: Title and Last Message */}
       <View className="flex-1 ml-4 justify-center">
@@ -120,7 +58,14 @@ const ChatItem = ({ room, latestMessage, onPress }: ChatItemProps) => {
 
       {/* Right: Time */}
       <View className="ml-2 items-end justify-center h-12 py-1">
-        <Text className="text-xs text-subtext">{timeDisplay}</Text>
+        <Text className="text-xs text-subtext mb-1">{timeDisplay}</Text>
+        {room.unreadCount > 0 && (
+          <View className="bg-brand rounded-full min-w-[20px] h-5 px-1.5 items-center justify-center">
+            <Text className="text-white text-[10px] font-bold">
+              {room.unreadCount > 99 ? "99+" : room.unreadCount}
+            </Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -134,7 +79,7 @@ const enhance = withObservables(["room"], ({ room }) => ({
     .observe()
     .pipe(
       // ✅ Use pipe to attach operators
-      map((messages: Message[]) => messages[0]) // ✅ Use the imported map operator
+      map((messages: Message[]) => messages[0]), // ✅ Use the imported map operator
     ),
 }));
 

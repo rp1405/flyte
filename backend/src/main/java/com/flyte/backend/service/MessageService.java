@@ -10,6 +10,10 @@ import com.flyte.backend.DTO.Message.CreateMessageRequest;
 import com.flyte.backend.model.Message;
 import com.flyte.backend.model.Room;
 import com.flyte.backend.model.User;
+import com.flyte.backend.model.RoomParticipant;
+import com.flyte.backend.enums.RoomType;
+import com.flyte.backend.enums.ConnectionStatus;
+import com.flyte.backend.repository.RoomParticipantRepository;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,12 +27,14 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
+    private final RoomParticipantRepository roomParticipantRepository;
 
     public MessageService(MessageRepository messageRepository, RoomRepository roomRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository, RoomParticipantRepository roomParticipantRepository) {
         this.messageRepository = messageRepository;
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
+        this.roomParticipantRepository = roomParticipantRepository;
     }
 
     @Transactional
@@ -38,6 +44,15 @@ public class MessageService {
 
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        if (room.getType() == RoomType.DM) {
+            RoomParticipant participant = roomParticipantRepository.findByRoomIdAndUserId(room.getId(), user.getId())
+                    .orElseThrow(() -> new IllegalArgumentException("User is not a participant of this room"));
+
+            if (participant.getStatus() != ConnectionStatus.CONNECTED) {
+                throw new IllegalStateException("You can only send messages when connected.");
+            }
+        }
 
         Message message = new Message();
         message.setRoom(room);
