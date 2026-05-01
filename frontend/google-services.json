@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "30889888359",
+    "project_id": "flyte-6ccab",
+    "storage_bucket": "flyte-6ccab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:30889888359:android:4b0e1ef8191bf35b1262c2",
+        "android_client_info": {
+          "package_name": "com.yuv_raj100.flyte"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDcOQOEsvRgH-MeoMSHxM89cqYLpuU6xWA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
