@@ -15,6 +15,13 @@ import ChatDetailScreen from "./screens/ChatDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
 import TabNavigator from "./screens/TabNavigator";
 import { SyncService } from "./services/SyncService";
+import messaging from "@react-native-firebase/messaging";
+import { usePushNotifications } from "./hooks/usePushNotifications";
+
+// Register background handler early in the app lifecycle
+messaging().setBackgroundMessageHandler(async (remoteMessage) => {
+  console.log("Message handled in the background!", remoteMessage);
+});
 
 // --- TYPES ---
 export type RootStackParamList = {
@@ -54,6 +61,9 @@ function AppNavigator() {
   
   // Initialize Global WebSocket Listener
   useGlobalWebSocketListener();
+
+  // Initialize Push Notifications
+  usePushNotifications(user?.id);
 
   // Example usage in HomeScreen.tsx
   useEffect(() => {

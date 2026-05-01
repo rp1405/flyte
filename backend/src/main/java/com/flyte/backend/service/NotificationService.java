@@ -5,6 +5,8 @@ import com.flyte.backend.globalWebsocketHandler.enums.GlobalMessageType;
 import com.flyte.backend.model.Message;
 import com.flyte.backend.model.User;
 import com.flyte.backend.repository.RoomParticipantRepository;
+import com.flyte.backend.repository.UserDeviceTokenRepository;
+import com.flyte.backend.model.UserDeviceToken;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -17,11 +19,17 @@ public class NotificationService {
 
     private final SimpMessageSendingOperations messagingTemplate;
     private final RoomParticipantRepository roomParticipantRepository;
+    private final FcmService fcmService;
+    private final UserDeviceTokenRepository userDeviceTokenRepository;
 
     public NotificationService(SimpMessageSendingOperations messagingTemplate,
-            RoomParticipantRepository roomParticipantRepository) {
+            RoomParticipantRepository roomParticipantRepository,
+            FcmService fcmService,
+            UserDeviceTokenRepository userDeviceTokenRepository) {
         this.messagingTemplate = messagingTemplate;
         this.roomParticipantRepository = roomParticipantRepository;
+        this.fcmService = fcmService;
+        this.userDeviceTokenRepository = userDeviceTokenRepository;
     }
 
     @Async
@@ -41,6 +49,16 @@ public class NotificationService {
                     // The frontend receives: { "type": "CHAT_NOTIFICATION", "payload": { "id":
                     // "...", "text": "..." } }
                     messagingTemplate.convertAndSend("/topic/user/" + user.getId(), envelope);
+
+                    // 3. Send Push Notification
+                    List<UserDeviceToken> tokens = userDeviceTokenRepository.findByUserId(user.getId());
+                    for (UserDeviceToken token : tokens) {
+                        fcmService.sendPushNotification(
+                            token.getFcmToken(),
+                            "New message from " + message.getUser().getName(),
+                            message.getContent()
+                        );
+                    }
                 });
     }
 }
