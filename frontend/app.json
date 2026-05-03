@@ -47,7 +47,7 @@
       [
         "@morrowdigital/watermelondb-expo-plugin",
         {
-          "disableJsi": false
+          "disableJsi": true
         }
       ],
       [
@@ -63,7 +63,9 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
     ]
   }
 }

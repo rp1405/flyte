@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert } from "react-native";
 import { RootStackNavigationProp } from "../App";
 import { NotificationService } from "../services/NotificationService";
+import Toast from "react-native-toast-message";
 
 export const usePushNotifications = (userId?: string) => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -52,25 +53,24 @@ export const usePushNotifications = (userId?: string) => {
     // 1. Listen for Foreground Messages
     const unsubscribe = messaging().onMessage(async (remoteMessage) => {
       console.log("A new FCM message arrived in foreground!", remoteMessage);
-      Alert.alert(
-        remoteMessage.notification?.title || "New Message",
-        remoteMessage.notification?.body || "",
-        [
-          { text: "Dismiss", style: "cancel" },
-          {
-            text: "View",
-            onPress: () => {
-              const roomId = remoteMessage.data?.roomId as string | undefined;
-              if (roomId) {
-                navigation.navigate("ChatDetail", {
-                  roomId: roomId,
-                  userId: userId,
-                });
-              }
-            },
-          },
-        ]
-      );
+      Toast.show({
+        type: 'info',
+        text1: remoteMessage.notification?.title || "New Message",
+        text2: remoteMessage.notification?.body || "",
+        position: 'top',
+        visibilityTime: 4000,
+        autoHide: true,
+        onPress: () => {
+          const roomId = remoteMessage.data?.roomId as string | undefined;
+          if (roomId) {
+            navigation.navigate("ChatDetail", {
+              roomId: roomId,
+              userId: userId,
+            });
+          }
+          Toast.hide();
+        }
+      });
     });
 
     // 2. Handle background notification clicks (App is in background)

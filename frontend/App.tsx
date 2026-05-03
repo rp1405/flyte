@@ -1,3 +1,5 @@
+
+import "@react-native-firebase/app";
 import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
@@ -17,6 +19,7 @@ import TabNavigator from "./screens/TabNavigator";
 import { SyncService } from "./services/SyncService";
 import messaging from "@react-native-firebase/messaging";
 import { usePushNotifications } from "./hooks/usePushNotifications";
+import Toast from "react-native-toast-message";
 
 // Register background handler early in the app lifecycle
 messaging().setBackgroundMessageHandler(async (remoteMessage) => {
@@ -146,6 +149,7 @@ function App() {
           </ConfigProvider>
         </AuthProvider>
       </NavigationContainer>
+      <Toast />
     </SafeAreaProvider>
   );
 }
