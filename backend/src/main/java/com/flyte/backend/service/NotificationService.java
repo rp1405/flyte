@@ -21,15 +21,18 @@ public class NotificationService {
     private final RoomParticipantRepository roomParticipantRepository;
     private final FcmService fcmService;
     private final UserDeviceTokenRepository userDeviceTokenRepository;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public NotificationService(SimpMessageSendingOperations messagingTemplate,
             RoomParticipantRepository roomParticipantRepository,
             FcmService fcmService,
-            UserDeviceTokenRepository userDeviceTokenRepository) {
+            UserDeviceTokenRepository userDeviceTokenRepository,
+            com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.messagingTemplate = messagingTemplate;
         this.roomParticipantRepository = roomParticipantRepository;
         this.fcmService = fcmService;
         this.userDeviceTokenRepository = userDeviceTokenRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Async
@@ -53,10 +56,9 @@ public class NotificationService {
                     // 3. Send Push Notification
                     List<UserDeviceToken> tokens = userDeviceTokenRepository.findByUserId(user.getId());
                     
-                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                     String messageJson = "{}";
                     try {
-                        messageJson = mapper.writeValueAsString(message);
+                        messageJson = objectMapper.writeValueAsString(message);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
