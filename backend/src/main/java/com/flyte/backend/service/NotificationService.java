@@ -52,11 +52,20 @@ public class NotificationService {
 
                     // 3. Send Push Notification
                     List<UserDeviceToken> tokens = userDeviceTokenRepository.findByUserId(user.getId());
+                    
+                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                    String messageJson = "{}";
+                    try {
+                        messageJson = mapper.writeValueAsString(message);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
                     for (UserDeviceToken token : tokens) {
                         fcmService.sendPushNotification(
                             token.getFcmToken(),
-                            "New message from " + message.getUser().getName(),
-                            message.getContent()
+                            message.getUser().getName(),
+                            messageJson
                         );
                     }
                 });

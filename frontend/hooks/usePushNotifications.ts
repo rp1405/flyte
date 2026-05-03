@@ -53,15 +53,26 @@ export const usePushNotifications = (userId?: string) => {
     // 1. Listen for Foreground Messages
     const unsubscribe = messaging().onMessage(async (remoteMessage) => {
       console.log("A new FCM message arrived in foreground!", remoteMessage);
+
+      let roomId: string | undefined;
+      let textMessage: string | undefined;
+      try {
+        const bodyData = JSON.parse(remoteMessage.notification?.body || "{}");
+        roomId = bodyData.room?.id;
+        textMessage = bodyData.messageText;
+      } catch (e) {
+        console.error("Could not parse notification body for roomId", e);
+      }
+
       Toast.show({
         type: 'info',
         text1: remoteMessage.notification?.title || "New Message",
-        text2: remoteMessage.notification?.body || "",
+        text2: textMessage || "",
         position: 'top',
         visibilityTime: 4000,
         autoHide: true,
         onPress: () => {
-          const roomId = remoteMessage.data?.roomId as string | undefined;
+          
           if (roomId) {
             navigation.navigate("ChatDetail", {
               roomId: roomId,
@@ -79,7 +90,13 @@ export const usePushNotifications = (userId?: string) => {
         "Notification caused app to open from background state:",
         remoteMessage.notification
       );
-      const roomId = remoteMessage.data?.roomId as string | undefined;
+      let roomId: string | undefined;
+      try {
+        const bodyData = JSON.parse(remoteMessage.notification?.body || "{}");
+        roomId = bodyData.room?.id;
+      } catch (e) {
+        console.error("Could not parse notification body for roomId", e);
+      }
       if (roomId) {
         navigation.navigate("ChatDetail", {
           roomId: roomId,
@@ -97,7 +114,13 @@ export const usePushNotifications = (userId?: string) => {
             "Notification caused app to open from quit state:",
             remoteMessage.notification
           );
-          const roomId = remoteMessage.data?.roomId as string | undefined;
+          let roomId: string | undefined;
+          try {
+            const bodyData = JSON.parse(remoteMessage.notification?.body || "{}");
+            roomId = bodyData.room?.id;
+          } catch (e) {
+            console.error("Could not parse notification body for roomId", e);
+          }
           if (roomId) {
             // Use setTimeout to ensure navigation is ready if it opened from cold start
             setTimeout(() => {
