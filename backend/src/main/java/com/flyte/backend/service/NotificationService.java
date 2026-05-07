@@ -56,18 +56,15 @@ public class NotificationService {
                     // 3. Send Push Notification
                     List<UserDeviceToken> tokens = userDeviceTokenRepository.findByUserId(user.getId());
                     
-                    String messageJson = "{}";
-                    try {
-                        messageJson = objectMapper.writeValueAsString(message);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    java.util.Map<String, String> data = new java.util.HashMap<>();
+                    data.put("roomId", roomId.toString());
 
                     for (UserDeviceToken token : tokens) {
                         fcmService.sendPushNotification(
                             token.getFcmToken(),
                             message.getUser().getName(),
-                            messageJson
+                            message.getMessageText(),
+                            data
                         );
                     }
                 });

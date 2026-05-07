@@ -1,10 +1,9 @@
 import messaging from "@react-native-firebase/messaging";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
-import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
 import { RootStackNavigationProp } from "../App";
 import { NotificationService } from "../services/NotificationService";
-import Toast from "react-native-toast-message";
 
 export const usePushNotifications = (userId?: string) => {
   const navigation = useNavigation<RootStackNavigationProp>();
@@ -57,11 +56,10 @@ export const usePushNotifications = (userId?: string) => {
       let roomId: string | undefined;
       let textMessage: string | undefined;
       try {
-        const bodyData = JSON.parse(remoteMessage.notification?.body || "{}");
-        roomId = bodyData.room?.id;
-        textMessage = bodyData.messageText;
+        roomId = remoteMessage.data?.roomId as string | undefined;
+        textMessage = remoteMessage.notification?.body;
       } catch (e) {
-        console.error("Could not parse notification body for roomId", e);
+        console.error("Error reading notification data", e);
       }
 
       Toast.show({
@@ -92,10 +90,9 @@ export const usePushNotifications = (userId?: string) => {
       );
       let roomId: string | undefined;
       try {
-        const bodyData = JSON.parse(remoteMessage.notification?.body || "{}");
-        roomId = bodyData.room?.id;
+        roomId = remoteMessage.data?.roomId as string | undefined;
       } catch (e) {
-        console.error("Could not parse notification body for roomId", e);
+        console.error("Error reading notification data", e);
       }
       if (roomId) {
         navigation.navigate("ChatDetail", {
@@ -116,10 +113,9 @@ export const usePushNotifications = (userId?: string) => {
           );
           let roomId: string | undefined;
           try {
-            const bodyData = JSON.parse(remoteMessage.notification?.body || "{}");
-            roomId = bodyData.room?.id;
+            roomId = remoteMessage.data?.roomId as string | undefined;
           } catch (e) {
-            console.error("Could not parse notification body for roomId", e);
+            console.error("Error reading notification data", e);
           }
           if (roomId) {
             // Use setTimeout to ensure navigation is ready if it opened from cold start

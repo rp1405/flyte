@@ -114,6 +114,55 @@ function AppNavigator() {
 }
 
 // --- 2. ROOT COMPONENT ---
+import { ToastConfig } from "react-native-toast-message";
+import { Image, TouchableOpacity, Text } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// Custom Toast Component Wrapper
+const CustomToast = () => {
+  const insets = useSafeAreaInsets();
+  
+  const toastConfig: ToastConfig = {
+    info: ({ text1, text2, onPress }) => (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={onPress}
+        style={{
+          width: '100%',
+          backgroundColor: AppColors.surface,
+          paddingHorizontal: 16,
+          paddingBottom: 16,
+          paddingTop: insets.top + 10,
+          borderBottomLeftRadius: 24,
+          borderBottomRightRadius: 24,
+          flexDirection: 'row',
+          alignItems: 'center',
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 0.2,
+          shadowRadius: 10,
+          elevation: 10,
+        }}
+      >
+        <Image
+          source={require('./assets/images/icon.png')}
+          style={{ width: 44, height: 44, borderRadius: 12, marginRight: 12 }}
+        />
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: AppColors.text }}>
+            {text1}
+          </Text>
+          <Text style={{ fontSize: 14, color: AppColors.subtext, marginTop: 2 }} numberOfLines={2}>
+            {text2}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    )
+  };
+
+  return <Toast config={toastConfig} topOffset={0} />;
+};
+
 function App() {
   useEffect(() => {
     const debugWatermelon = async () => {
@@ -149,7 +198,7 @@ function App() {
           </ConfigProvider>
         </AuthProvider>
       </NavigationContainer>
-      <Toast />
+      <CustomToast />
     </SafeAreaProvider>
   );
 }
