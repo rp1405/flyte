@@ -63,6 +63,57 @@ export const useGlobalWebSocketListener = () => {
         // TODO: Update user status in DB or local state
         break;
 
+      case WSMessageType.FRIEND_REQUEST_NOTIFICATION:
+        console.log("Friend request / new DM notification received:", event.payload);
+        try {
+          await database.write(async () => {
+            const roomsCollection = database.get<Room>("rooms");
+            
+            // Check if room already exists
+            try {
+              const existingRoom = await roomsCollection.find(event.payload.id);
+              if (existingRoom) {
+                console.log(`Room ${event.payload.id} already exists`);
+                return;
+              }
+            } catch (e) {
+              // Room not found, proceed to create
+            }
+
+            await roomsCollection.create((r) => {
+              r._raw.id = event.payload.id;
+              r.name = event.payload.name || "";
+              r.description = event.payload.description || "";
+              r.type = event.payload.type || "DM";
+              r.unreadCount = 0;
+              r.avatarUrl = event.payload.otherUser?.profilePictureUrl || "";
+              
+              if (event.payload.expiryTime) {
+                r.expiryTime = new Date(event.payload.expiryTime);
+              }
+              if (event.payload.createdAt) {
+                r.createdAt = new Date(event.payload.createdAt);
+              } else {
+                r.createdAt = new Date();
+              }
+              if (event.payload.updatedAt) {
+                r.updatedAt = new Date(event.payload.updatedAt);
+              } else {
+                r.updatedAt = new Date();
+              }
+              if (event.payload.lastMessageTimestamp) {
+                r.lastMessageTimestamp = new Date(event.payload.lastMessageTimestamp);
+              } else {
+                r.lastMessageTimestamp = new Date();
+              }
+            });
+          });
+          console.log(`Saved new room ${event.payload.id} to DB`);
+        } catch (error) {
+          console.error("Error saving incoming room to DB:", error);
+        }
+        break;
+
       default:
         console.warn("Unhandled WebSocket event type:", event);
     }

@@ -52,7 +52,8 @@ public class NotificationService {
                     // The frontend receives: { "type": "CHAT_NOTIFICATION", "payload": { "id":
                     // "...", "text": "..." } }
                     messagingTemplate.convertAndSend("/topic/user/" + user.getId(), envelope);
-
+                    System.out.println("Notification sent to user: " + user.getId());
+                    //System.out.println("Notification sent: " + envelope);
                     // 3. Send Push Notification
                     List<UserDeviceToken> tokens = userDeviceTokenRepository.findByUserId(user.getId());
                     
@@ -68,5 +69,32 @@ public class NotificationService {
                         );
                     }
                 });
+    }
+
+    @Async
+    public void notifyUserOfDMRequest(UUID targetUserId, com.flyte.backend.DTO.Room.RoomResponse roomResponse) {
+        GlobalWebSocketEnvelope envelope = new GlobalWebSocketEnvelope(
+                GlobalMessageType.FRIEND_REQUEST_NOTIFICATION,
+                roomResponse
+        );
+        messagingTemplate.convertAndSend("/topic/user/" + targetUserId, envelope);
+        System.out.println("Notification sent to user: " + targetUserId);
+        //System.out.println("Notification sent: " + envelope);
+
+        // Send Push Notification
+        List<UserDeviceToken> tokens = userDeviceTokenRepository.findByUserId(targetUserId);
+        
+        java.util.Map<String, String> data = new java.util.HashMap<>();
+        data.put("roomId", roomResponse.getId().toString());
+        data.put("type", "FRIEND_REQUEST");
+
+        for (UserDeviceToken token : tokens) {
+            fcmService.sendPushNotification(
+                token.getFcmToken(),
+                roomResponse.getName(),
+                "wants to connect with you!",
+                data
+            );
+        }
     }
 }
