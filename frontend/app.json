@@ -23,6 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "googleServicesFile": "./google-services.json",
       "package": "com.yuv_raj100.flyte"
     },
     "web": {
@@ -46,7 +47,7 @@
       [
         "@morrowdigital/watermelondb-expo-plugin",
         {
-          "disableJsi": false
+          "disableJsi": true
         }
       ],
       [
@@ -62,7 +63,9 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging"
     ]
   }
 }

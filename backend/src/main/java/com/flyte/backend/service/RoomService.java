@@ -32,13 +32,16 @@ public class RoomService {
     private final RoomParticipantRepository roomParticipantRepository;
     private final MessageService messageService;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public RoomService(RoomRepository roomRepository, RoomParticipantRepository roomParticipantRepository,
-            MessageService messageService, UserRepository userRepository) {
+            MessageService messageService, UserRepository userRepository,
+            NotificationService notificationService) {
         this.roomRepository = roomRepository;
         this.roomParticipantRepository = roomParticipantRepository;
         this.messageService = messageService;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -147,6 +150,11 @@ public class RoomService {
         targetParticipant.setUser(target);
         targetParticipant.setStatus(ConnectionStatus.RECEIVED);
         roomParticipantRepository.save(targetParticipant);
+
+        RoomResponse targetResponse = new RoomResponse(savedRoom);
+        targetResponse.setName(requester.getName());
+        targetResponse.setOtherUser(new UserResponse(requester));
+        notificationService.notifyUserOfDMRequest(request.getTargetUserId(), targetResponse);
 
         RoomResponse response = new RoomResponse(savedRoom);
         response.setName(target.getName());
