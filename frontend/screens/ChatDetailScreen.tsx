@@ -214,6 +214,28 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
           keyboardDismissMode="on-drag"
         />
 
+        {messages.length === 0 && (
+          <View className="absolute inset-0 items-center justify-center p-8 bg-background z-0">
+            <View className="w-24 h-24 bg-surface rounded-full items-center justify-center mb-5 border border-border/50 shadow-sm">
+              <Text className="text-4xl">👋</Text>
+            </View>
+            <Text className="text-text font-bold text-xl mb-3 text-center">
+              {dmStatus === "SENT" 
+                ? "Request Sent!" 
+                : dmStatus === "RECEIVED" 
+                  ? "New Connection Request"
+                  : "Say Hello!"}
+            </Text>
+            <Text className="text-subtext text-center text-base leading-6">
+              {dmStatus === "SENT"
+                ? `We've notified ${room.name} that you want to connect. You can start chatting as soon as they accept.`
+                : dmStatus === "RECEIVED"
+                  ? `${room.name} wants to connect with you. Accept the request above to start chatting.`
+                  : `Be the first to break the ice!. Start the conversation below.`}
+            </Text>
+          </View>
+        )}
+
         <SafeAreaView
           edges={["bottom"]}
           className="bg-background border-t border-border p-3"

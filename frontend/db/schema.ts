@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export const schema = appSchema({
-  version: 7,
+  version: 8,
   tables: [
     tableSchema({
       name: "users",
@@ -25,6 +25,7 @@ export const schema = appSchema({
         { name: "last_message_timestamp", type: "number" },
         { name: "unread_count", type: "number" },
         { name: "avatar_url", type: "string", isOptional: true },
+        { name: "other_user_id", type: "string", isOptional: true },
       ],
     }),
     tableSchema({

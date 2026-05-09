@@ -14,6 +14,7 @@ export default class Room extends Model {
   @text("type") type!: string;
   @field("unread_count") unreadCount!: number;
   @text("avatar_url") avatarUrl?: string;
+  @text("other_user_id") otherUserId?: string;
 
   // Storing dates as strings per your request (ISO format)
   @date("expiry_time") expiryTime!: Date;

@@ -101,30 +101,7 @@ export class SyncService {
         const allLocalRooms = await roomsCollection.query().fetch();
         const existingRoomsMap = new Map(allLocalRooms.map((r) => [r.id, r]));
 
-        // 2. Identify rooms to delete (present locally but not in the sync response)
-        const roomIdsInResponse = new Set(
-          apiResponseList.map((item) => item.room.id),
-        );
-        const roomsToDelete = allLocalRooms.filter(
-          (r) => !roomIdsInResponse.has(r.id),
-        );
-        const roomsToDeleteIds = roomsToDelete.map((r) => r.id);
-
         const operations: any[] = [];
-
-        // 3. Prepare Delete Operations for stale rooms and their messages
-        if (roomsToDeleteIds.length > 0) {
-          const messagesToDelete = await messagesCollection
-            .query(Q.where("room_id", Q.oneOf(roomsToDeleteIds)))
-            .fetch();
-
-          operations.push(
-            ...messagesToDelete.map((m) => m.prepareDestroyPermanently()),
-          );
-          operations.push(
-            ...roomsToDelete.map((r) => r.prepareDestroyPermanently()),
-          );
-        }
 
         // 4. Pre-fetch existing message IDs to prevent primary key collision on "push"
         const allApiMessageIds = apiResponseList.flatMap((item) =>
@@ -189,6 +166,10 @@ export class SyncService {
             // Update avatar if provided (typical for DMs)
             if (apiRoom.otherUser?.profilePictureUrl) {
               r.avatarUrl = apiRoom.otherUser.profilePictureUrl;
+            }
+
+            if (apiRoom.otherUser?.id) {
+              r.otherUserId = apiRoom.otherUser.id;
             }
           };
 

@@ -17,6 +17,7 @@ interface DMRoomResponse {
   createdAt?: string;
   updatedAt?: string;
   lastMessageTimestamp?: string;
+  otherUser?: { id: string };
 }
 
 export type ConnectionStatus = "CONNECTED" | "SENT" | "RECEIVED";
@@ -135,6 +136,7 @@ export class DirectMessageService {
           if (apiRoom.lastMessageTimestamp) {
             r.lastMessageTimestamp = new Date(apiRoom.lastMessageTimestamp);
           }
+          if (apiRoom.otherUser?.id) r.otherUserId = apiRoom.otherUser.id;
         });
       } catch (error) {
         // CREATE new
@@ -153,6 +155,7 @@ export class DirectMessageService {
           r.lastMessageTimestamp = apiRoom.lastMessageTimestamp
             ? new Date(apiRoom.lastMessageTimestamp)
             : new Date();
+          if (apiRoom.otherUser?.id) r.otherUserId = apiRoom.otherUser.id;
         });
       }
     });
