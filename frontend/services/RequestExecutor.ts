@@ -91,6 +91,7 @@ export class RequestExecutor {
     url: string,
     config: AxiosRequestConfig = {},
   ): Promise<ApiResponse<T>> {
+    console.log("Api URL:", this.BASE_URL + url);
     return this.executeRequest<T>(() => this.client.delete(url, config));
   }
 

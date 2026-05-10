@@ -54,4 +54,10 @@ public class RoomController {
         return ResponseEntity.ok(participants);
     }
 
+    @DeleteMapping("/delete/{roomId}/{userId}")
+    public ResponseEntity<Void> deleteRoom(@PathVariable UUID roomId, @PathVariable UUID userId) {
+        roomService.deleteRoom(roomId, userId);
+        return ResponseEntity.ok().build();
+    }
+
 }

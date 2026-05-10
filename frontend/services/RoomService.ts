@@ -30,6 +30,22 @@ export class RoomService {
   }
 
   /**
+   * Deletes a room from the backend or leaves the group.
+   * @param roomId The UUID of the room.
+   * @param userId The UUID of the user.
+   */
+  public static async deleteRoom(roomId: string, userId: string): Promise<void> {
+    const url = `/api/rooms/delete/${roomId}/${userId}`;
+    const apiResponse = await RequestExecutor.delete<void>(url);
+
+    if (!apiResponse.success) {
+      throw new Error(
+        apiResponse.error || `Failed to delete room ${roomId}`,
+      );
+    }
+  }
+
+  /**
    * Batch upserts (Create or Update) users into WatermelonDB.
    */
   //   private static async saveUsersToDatabase(apiUsers: UserDTO[]) {

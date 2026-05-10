@@ -9,6 +9,8 @@ import {
     TextInput,
     TouchableOpacity,
     View,
+    Modal,
+    Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppColors } from "../constants/colors";
@@ -29,6 +31,7 @@ import {
     ConnectionStatus,
     DirectMessageService,
 } from "../services/DirectMessageService";
+import { RoomService } from "../services/RoomService";
 import { BackendMessage } from "../types/message";
 
 type RootStackParamList = {
@@ -51,6 +54,55 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
 
   const [dmStatus, setDmStatus] = useState<ConnectionStatus>("CONNECTED");
   const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+
+  const handleBlockOrLeave = () => {
+    setIsMenuVisible(false);
+    const isDM = room.type?.toLowerCase() === "dm" || room.type === "direct";
+    const alertTitle = isDM ? "Block User" : "Leave Group";
+    const alertMessage = isDM 
+      ? "Are you sure you want to block this user? Your chat will be deleted."
+      : "Are you sure you want to leave this group? The group will be deleted.";
+    const actionText = isDM ? "Block" : "Leave";
+
+    Alert.alert(
+      alertTitle,
+      alertMessage,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: actionText,
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setIsActionLoading(true);
+              await RoomService.deleteRoom(room.id, userId);
+              
+              await database.write(async () => {
+                try {
+                  const roomToDelete = await database.get<Room>("rooms").find(room.id);
+                  const messagesToDelete = await database.get<Message>("messages").query(Q.where("room_id", room.id)).fetch();
+                  for (const msg of messagesToDelete) {
+                    await msg.destroyPermanently();
+                  }
+                  await roomToDelete.destroyPermanently();
+                } catch (dbError) {
+                   console.error("Error deleting from local DB", dbError);
+                }
+              });
+
+              navigation.goBack();
+            } catch (error) {
+              console.error(`Failed to ${actionText.toLowerCase()}`, error);
+              Alert.alert("Error", `Failed to ${actionText.toLowerCase()}. Please try again.`);
+            } finally {
+              setIsActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   useEffect(() => {
     if (room.type?.toLowerCase() === "dm" || room.type === "direct") {
@@ -184,10 +236,35 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
             </Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => setIsMenuVisible(true)}>
           <MoreVertical color={AppColors.text} size={22} />
         </TouchableOpacity>
       </View>
+
+      {/* --- Dropdown Menu Modal --- */}
+      <Modal
+        visible={isMenuVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsMenuVisible(false)}
+      >
+        <TouchableOpacity
+          className="flex-1"
+          activeOpacity={1}
+          onPress={() => setIsMenuVisible(false)}
+        >
+          <View className="absolute top-16 right-4 bg-surface rounded-lg shadow-lg border border-border min-w-[150px] overflow-hidden">
+            <TouchableOpacity 
+              className="py-3 px-4 flex-row items-center bg-surface active:bg-background"
+              onPress={handleBlockOrLeave}
+            >
+              <Text className="text-red-500 font-medium text-base">
+                {room.type?.toLowerCase() === "dm" || room.type === "direct" ? "Block User" : "Leave Group"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {room.type?.toLowerCase() === "dm" && dmStatus !== "CONNECTED" && (
         <ConnectionStatusBanner
