@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -19,8 +20,8 @@ import {
   LogOut,
 } from "lucide-react-native";
 import { AppColors } from "../constants/colors";
-// 1. Import the hook
 import { useAuth } from "../context/AuthContext";
+import { useConfig } from "../context/ConfigContext";
 
 // --- Types for Menu Items ---
 type MenuItemProps = {
@@ -63,9 +64,14 @@ const ProfileMenuItem = ({
 
 export default function ProfileScreen() {
   // 2. Get User and Logout function directly from Context
-  // We don't need 'navigation' prop for logout anymore because
-  // the App.tsx navigator will automatically switch screens when user becomes null.
   const { user, logout } = useAuth();
+  const { appConfig } = useConfig();
+
+  // --- Show Content Logic ---
+  const handleShowContent = (title: string, content?: string) => {
+    if (!content) return;
+    Alert.alert(title, content);
+  };
 
   // --- Logout Logic ---
   const handleLogout = () => {
@@ -86,9 +92,9 @@ export default function ProfileScreen() {
       {/* --- Header --- */}
       <View className="px-6 py-4 flex-row justify-between items-center z-10">
         <Text className="text-3xl font-bold text-text">Profile</Text>
-        <TouchableOpacity className="w-10 h-10 bg-surface rounded-full items-center justify-center border border-border active:bg-border">
+        {/* <TouchableOpacity className="w-10 h-10 bg-surface rounded-full items-center justify-center border border-border active:bg-border">
           <Settings color={AppColors.subtext} size={20} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <ScrollView
@@ -143,7 +149,7 @@ export default function ProfileScreen() {
           <Text className="text-lg font-bold text-text mb-4">General</Text>
 
           <View className="bg-surface rounded-3xl border border-border overflow-hidden">
-            <ProfileMenuItem
+            {/* <ProfileMenuItem
               icon={UserCog}
               label="Personal Information"
               onPress={() => console.log("Navigate to Personal Info edit")}
@@ -152,16 +158,16 @@ export default function ProfileScreen() {
               icon={Bell}
               label="Notifications"
               onPress={() => {}}
-            />
+            /> */}
             <ProfileMenuItem
               icon={ShieldCheck}
               label="Privacy & Security"
-              onPress={() => {}}
+              onPress={() => handleShowContent("Privacy & Security", appConfig?.privacyAndSecurityContent)}
             />
             <ProfileMenuItem
               icon={HelpCircle}
               label="Help & Support"
-              onPress={() => {}}
+              onPress={() => handleShowContent("Help & Support", appConfig?.helpAndSupportContent)}
             />
           </View>
         </View>

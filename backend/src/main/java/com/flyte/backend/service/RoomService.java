@@ -219,4 +219,17 @@ public class RoomService {
                 .map(RoomParticipant::getStatus)
                 .orElse(ConnectionStatus.NOT_CONNECTED);
     }
+
+    @Transactional
+    public void deleteRoom(UUID roomId, UUID userId) {
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+
+        if (room.getType() == RoomType.DM) {
+            roomParticipantRepository.deleteByRoomId(roomId);
+            roomRepository.deleteById(roomId);
+        } else {
+            roomParticipantRepository.deleteByRoomIdAndUserId(roomId, userId);
+        }
+    }
 }

@@ -30,6 +30,9 @@ public interface RoomParticipantRepository extends JpaRepository<RoomParticipant
         // 4. Leave Group (Requires Transactional at Service level usually)
         void deleteByRoomIdAndUserId(UUID roomId, UUID userId);
 
+        // Delete all participants by room ID
+        void deleteByRoomId(UUID roomId);
+
         // 5. Get actual User objects in a room
         @Query("SELECT rp.user FROM RoomParticipant rp WHERE rp.room.id = :roomId")
         List<User> findUsersByRoomId(@Param("roomId") UUID roomId);

@@ -2,6 +2,9 @@ import { useAuth } from "@/context/AuthContext";
 import { JourneyUser } from "@/types/journey";
 import { RouteProp, useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { database } from "@/db";
+import Room from "@/db/models/Room";
+import { Q } from "@nozbe/watermelondb";
 import {
   ChevronLeft,
   Mail,
@@ -58,14 +61,29 @@ const UserProfileScreen = ({ route, user: propUser }: Props) => {
 
     setIsCreatingDM(true);
     try {
+      // 1. Check local DB first to see if a DM already exists
+      const roomsCollection = database.get<Room>(Room.table);
+      const existingRooms = await roomsCollection.query(
+        Q.where("type", "DM"),
+        Q.where("other_user_id", user.id)
+      ).fetch();
 
-      // find or create via API
+      if (existingRooms.length > 0) {
+        // Fast path: Navigate instantly if room exists locally
+        navigation.navigate("ChatDetail", {
+          roomId: existingRooms[0].id,
+          userId: currentUser.id,
+        });
+        return;
+      }
+
+      // 2. Fallback: Call backend to find or create
       const room = await DirectMessageService.findOrCreateDM(
         user.id, // Target (The profile you are viewing)
         currentUser.id, // Requester (You)
       );
 
-      // 2. Navigate to Chat Detail with the new Room ID
+      // 3. Navigate to Chat Detail with the new Room ID
       navigation.navigate("ChatDetail", {
         roomId: room.id,
         userId: currentUser.id,

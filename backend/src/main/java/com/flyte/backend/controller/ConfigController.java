@@ -40,4 +40,13 @@ public class ConfigController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
+    @GetMapping("/app")
+    public ResponseEntity<AppConfigResponse> getAppConfig() {
+        AppConfigResponse config = new AppConfigResponse(
+            "Welcome to Flyte Support! If you need any assistance, please contact us at support@flyte-app.com. Our team is available 24/7 to help you with your travel needs and connection requests.",
+            "Your privacy is our top priority. We collect only the minimal data necessary to provide our services. Your personal information, location data, and chat messages are securely stored and never sold to third parties."
+        );
+        return ResponseEntity.ok(config);
+    }
 }
