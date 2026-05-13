@@ -37,20 +37,25 @@ public class NotificationController {
             return ResponseEntity.badRequest().body("User not found");
         }
 
-        // Check if token already exists
-        // (Simple implementation: just save if it doesn't exist)
-        // In a real app, you might want to handle updates or removals
-        
-        UserDeviceToken deviceToken = new UserDeviceToken();
-        deviceToken.setUser(user);
-        deviceToken.setFcmToken(token);
-        
         try {
-            userDeviceTokenRepository.save(deviceToken);
+            // Check if token already exists
+            UserDeviceToken existingToken = userDeviceTokenRepository.findByFcmToken(token);
+            
+            if (existingToken != null) {
+                // Update existing token with current user
+                existingToken.setUser(user);
+                userDeviceTokenRepository.save(existingToken);
+            } else {
+                // Create new token entry
+                UserDeviceToken deviceToken = new UserDeviceToken();
+                deviceToken.setUser(user);
+                deviceToken.setFcmToken(token);
+                userDeviceTokenRepository.save(deviceToken);
+            }
+            
             return ResponseEntity.ok("Token registered successfully");
         } catch (Exception e) {
-            // Probably unique constraint violation
-            return ResponseEntity.ok("Token already registered");
+            return ResponseEntity.status(500).body("Failed to register token: " + e.getMessage());
         }
     }
 }
