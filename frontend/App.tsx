@@ -1,4 +1,3 @@
-
 import "@react-native-firebase/app";
 import {
   createNativeStackNavigator,
@@ -15,6 +14,7 @@ import { database as localDb } from "./db";
 import "./global.css";
 import ChatDetailScreen from "./screens/ChatDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
+import NicknameSetupScreen from "./screens/NicknameSetupScreen";
 import TabNavigator from "./screens/TabNavigator";
 import { SyncService } from "./services/SyncService";
 import messaging from "@react-native-firebase/messaging";
@@ -30,6 +30,7 @@ messaging().setBackgroundMessageHandler(async (remoteMessage) => {
 export type RootStackParamList = {
   MainTabs: undefined;
   Login: undefined;
+  NicknameSetup: undefined;
   ChatDetail: {
     roomId: string;
     title?: string;
@@ -61,7 +62,7 @@ import { JourneyUser } from "./types/journey";
 
 function AppNavigator() {
   const { user, isAuthLoading } = useAuth();
-  
+
   // Initialize Global WebSocket Listener
   useGlobalWebSocketListener();
 
@@ -94,22 +95,33 @@ function AppNavigator() {
 
   // B. Main Navigation
   return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          // --- AUTHENTICATED ROUTES ---
-          // If user exists, show the App Stack. Login screen is NOT rendered.
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {user ? (
+        // --- AUTHENTICATED ROUTES ---
+        // If user exists, check if nickname is set
+        !user.nickname ? (
+          // No nickname yet - show setup screen
+          <>
+            <Stack.Screen
+              name="NicknameSetup"
+              component={NicknameSetupScreen}
+            />
+          </>
+        ) : (
+          // Nickname set - show main app
           <>
             <Stack.Screen name="MainTabs" component={TabNavigator} />
             <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
             <Stack.Screen name="GroupInfo" component={GroupInfoScreen} />
             <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           </>
-        ) : (
-          // --- GUEST ROUTES ---
-          // If no user, show ONLY the Login screen.
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
-      </Stack.Navigator>
+        )
+      ) : (
+        // --- GUEST ROUTES ---
+        // If no user, show ONLY the Login screen.
+        <Stack.Screen name="Login" component={LoginScreen} />
+      )}
+    </Stack.Navigator>
   );
 }
 
@@ -121,23 +133,23 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 // Custom Toast Component Wrapper
 const CustomToast = () => {
   const insets = useSafeAreaInsets();
-  
+
   const toastConfig: ToastConfig = {
     info: ({ text1, text2, onPress }) => (
       <TouchableOpacity
         activeOpacity={0.9}
         onPress={onPress}
         style={{
-          width: '100%',
+          width: "100%",
           backgroundColor: AppColors.surface,
           paddingHorizontal: 16,
           paddingBottom: 16,
           paddingTop: insets.top + 10,
           borderBottomLeftRadius: 24,
           borderBottomRightRadius: 24,
-          flexDirection: 'row',
-          alignItems: 'center',
-          shadowColor: '#000',
+          flexDirection: "row",
+          alignItems: "center",
+          shadowColor: "#000",
           shadowOffset: { width: 0, height: 5 },
           shadowOpacity: 0.2,
           shadowRadius: 10,
@@ -145,19 +157,24 @@ const CustomToast = () => {
         }}
       >
         <Image
-          source={require('./assets/images/icon.png')}
+          source={require("./assets/images/icon.png")}
           style={{ width: 44, height: 44, borderRadius: 12, marginRight: 12 }}
         />
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: AppColors.text }}>
+          <Text
+            style={{ fontSize: 16, fontWeight: "bold", color: AppColors.text }}
+          >
             {text1}
           </Text>
-          <Text style={{ fontSize: 14, color: AppColors.subtext, marginTop: 2 }} numberOfLines={2}>
+          <Text
+            style={{ fontSize: 14, color: AppColors.subtext, marginTop: 2 }}
+            numberOfLines={2}
+          >
             {text2}
           </Text>
         </View>
       </TouchableOpacity>
-    )
+    ),
   };
 
   return <Toast config={toastConfig} topOffset={0} />;
@@ -175,15 +192,15 @@ function App() {
       console.log("=======WATERMELON DB=========");
       console.log(
         "=== USERS ===",
-        users.map((u) => u._raw)
+        users.map((u) => u._raw),
       );
       console.log(
         "=== ROOMS ===",
-        rooms.map((r) => r._raw)
+        rooms.map((r) => r._raw),
       );
       console.log(
         "=== MESSAGES ===",
-        messages.map((m) => m._raw)
+        messages.map((m) => m._raw),
       );
     };
     debugWatermelon();

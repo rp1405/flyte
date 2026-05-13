@@ -27,8 +27,11 @@ public class UserService {
                     // Update existing user's information if needed
                     existingUser.setName(userRequest.name);
                     existingUser.setProfilePictureUrl(userRequest.profilePictureUrl);
-                    existingUser.setNickname(userRequest.nickname);
                     existingUser.setPhoneNumber(userRequest.phoneNumber);
+                    // Preserve existing nickname if not provided in request
+                    if (userRequest.nickname != null) {
+                        existingUser.setNickname(userRequest.nickname);
+                    }
                     return userRepository.save(existingUser);
                 })
                 .orElseGet(() -> {
@@ -45,12 +48,6 @@ public class UserService {
         return new UserResponse(user);
     }
 
-    public UserResponse getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .map(UserResponse::new)
-                .orElse(null);
-    }
-
     public UserResponse getUserById(UUID id) {
         return userRepository.findById(id)
                 .map(UserResponse::new)
@@ -63,6 +60,34 @@ public class UserService {
 
     public User findById(UUID id) {
         return userRepository.findById(id).orElse(null);
+    }
+
+    // Check if a nickname is available (not already taken)
+    public boolean isNicknameAvailable(String nickname) {
+        if (nickname == null || nickname.trim().isEmpty()) {
+            return false;
+        }
+        return !userRepository.existsByNickname(nickname);
+    }
+
+    // Set a user's nickname
+    @Transactional
+    public UserResponse setUserNickname(UUID userId, String nickname) {
+        if (nickname == null || nickname.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nickname cannot be empty");
+        }
+
+        // Check if nickname is already taken
+        if (!isNicknameAvailable(nickname)) {
+            throw new IllegalArgumentException("Nickname is already taken");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        user.setNickname(nickname);
+        User updatedUser = userRepository.save(user);
+        return new UserResponse(updatedUser);
     }
 
 }

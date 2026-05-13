@@ -12,7 +12,7 @@ export interface JourneyUser {
   email: string;
   phoneNumber: string | null; // Can be null based on example
   profilePictureUrl: string;
-  nickname: string | null;
+  nickname: string;
 }
 
 // Represents the Room objects (Source, Destination, Flight) nested within the response
