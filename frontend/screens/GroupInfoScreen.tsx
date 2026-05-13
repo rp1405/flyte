@@ -113,7 +113,7 @@ const GroupInfoScreen = ({ room }: GroupInfoScreenProps) => {
             // Replace with <Image source={{ uri: item.profilePictureUrl }} /> if you have one
             <View className="w-full h-full bg-brand/20 items-center justify-center">
               <Text className="text-brand font-bold text-sm">
-                {item.name.charAt(0).toUpperCase()}
+                {item.nickname}
               </Text>
             </View>
           ) : (

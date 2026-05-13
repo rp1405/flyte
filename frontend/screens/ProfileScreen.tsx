@@ -128,20 +128,16 @@ export default function ProfileScreen() {
               {user?.email || "No email"}
             </Text>
 
-            {/* Note: Ensure 'nickname' exists in your AuthContext User interface if you want to use it here. 
-                Otherwise, you might need to cast user as `any` or update the interface. */}
-            {(user as any)?.nickname && (
-              <Text className="text-brand font-medium text-sm mt-1">
-                @{(user as any).nickname}
-              </Text>
-            )}
+            <Text className="text-brand font-medium text-sm mt-1">
+              @{user?.nickname}
+            </Text>
           </View>
 
           {/* Edit Profile Button */}
-          <TouchableOpacity className="mt-6 bg-brand py-3 px-8 rounded-full flex-row items-center active:opacity-90">
+          {/* <TouchableOpacity className="mt-6 bg-brand py-3 px-8 rounded-full flex-row items-center active:opacity-90">
             <Edit2 color="white" size={16} />
             <Text className="text-white font-semibold ml-2">Edit Profile</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         {/* --- Settings Menu Section --- */}

@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           id: loggedInUser.id,
           name: loggedInUser.name,
           email: loggedInUser.email,
+          nickname: loggedInUser.nickname,
           profilePictureUrl: loggedInUser.profilePictureUrl,
         });
         setToken(loggedInUser.token);
@@ -67,6 +68,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           u._raw.id = userData.id; // Sync ID from Backend
           u.name = userData.name;
           u.email = userData.email;
+          u.nickname = userData.nickname;
           u.profilePictureUrl = userData.profilePictureUrl;
           u.token = newToken; // Store token in DB
         });
@@ -75,7 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await localDb.batch(...deleteOps, createUserOp);
       });
 
-      // Update Local State — this triggers the nav switch to MainTabs
+      // Update Local State — this triggers the nav switch to MainTabs or NicknameSetup
       setToken(newToken);
       setUser(userData);
     } catch (e) {

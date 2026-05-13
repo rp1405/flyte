@@ -117,7 +117,7 @@ export default function HomeScreen() {
         {/* --- Greeting --- */}
         <View className="mt-3 mb-5 ml-2">
           <Text className="text-2xl font-bold text-text">
-            Hey, {user.name} 👋
+            Hey, {user.nickname} 👋
           </Text>
           <Text className="text-subtext text-base">
             Where are you flying today?

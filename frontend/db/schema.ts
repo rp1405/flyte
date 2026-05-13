@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export const schema = appSchema({
-  version: 8,
+  version: 9,
   tables: [
     tableSchema({
       name: "users",
@@ -9,6 +9,7 @@ export const schema = appSchema({
         // 'id' is AUTOMATICALLY added by WatermelonDB. Do not add it here.
         { name: "name", type: "string" },
         { name: "email", type: "string" },
+        { name: "nickname", type: "string", isOptional: true },
         { name: "profile_picture_url", type: "string", isOptional: true },
         { name: "token", type: "string" },
       ],

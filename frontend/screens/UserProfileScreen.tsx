@@ -127,12 +127,12 @@ const UserProfileScreen = ({ route, user: propUser }: Props) => {
             )}
           </View>
 
-          <Text className="text-2xl font-bold text-text text-center px-6">
-            {user.name}
-          </Text>
+          {/* <Text className="text-2xl font-bold text-text text-center px-6">
+            {user.nickname}
+          </Text> */}
 
           {user.nickname && (
-            <Text className="text-brand font-medium mt-1">
+            <Text className="text-brand font-semibold text-lg mt-1">
               @{user.nickname}
             </Text>
           )}

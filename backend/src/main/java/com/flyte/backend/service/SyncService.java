@@ -84,7 +84,7 @@ public class SyncService {
                 if (room.getType() == RoomType.DM) {
                     roomParticipantRepository.findOtherParticipant(room.getId(), userId, RoomType.DM)
                             .ifPresent(otherParticipant -> {
-                                roomResponse.setName(otherParticipant.getUser().getName());
+                                roomResponse.setName(otherParticipant.getUser().getNickname());
                                 roomResponse.setOtherUser(new UserResponse(otherParticipant.getUser()));
                             });
                 }

@@ -164,7 +164,7 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
         m.text = backendMsg.messageText;
         m.timestamp = new Date(backendMsg.createdAt);
         m.senderId = backendMsg.user.id;
-        m.senderName = backendMsg.user.name;
+        m.senderName = backendMsg.user.nickname;
         m.room.id = room.id;
       });
 
