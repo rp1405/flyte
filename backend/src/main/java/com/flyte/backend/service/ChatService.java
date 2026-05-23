@@ -10,7 +10,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class ChatService {
 
@@ -54,5 +56,6 @@ public class ChatService {
 
         // 4. NOTIFICATION: Send background alerts (Async via separate service)
         notificationService.notifyRoomParticipants(roomUuid, savedMessage);
+        log.info("Successfully processed and broadcasted message in room: {}", roomId);  
     }
 }

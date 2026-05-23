@@ -24,7 +24,10 @@ import java.time.Instant;
 
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import com.flyte.backend.exception.ResourceNotFoundException;
 
+@Slf4j
 @Service
 public class RoomService {
 
@@ -51,13 +54,14 @@ public class RoomService {
         newRoom.setDescription(roomRequest.getDescription());
         newRoom.setType(roomRequest.getType());
         Room savedRoom = roomRepository.save(newRoom);
+        log.info("Successfully created room '{}' with ID: {}", savedRoom.getName(), savedRoom.getId());
         return new RoomResponse(savedRoom);
     }
 
     public RoomResponse getRoomById(UUID id) {
         return roomRepository.findById(id)
                 .map(RoomResponse::new)
-                .orElse(null);
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + id));
     }
 
     public List<RoomWithMessages> getRoomsAndMessagesByUserId(UUID userId) {
@@ -135,7 +139,7 @@ public class RoomService {
 
         // 3. Add Requester (SENT) means the requester has sent the chat request
         User requester = userRepository.findById(request.getRequesterId())
-                .orElseThrow(() -> new IllegalArgumentException("Requester not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Requester not found with ID: " + request.getRequesterId()));
         RoomParticipant requesterParticipant = new RoomParticipant();
         requesterParticipant.setRoom(savedRoom);
         requesterParticipant.setUser(requester);
@@ -144,7 +148,7 @@ public class RoomService {
 
         // 4. Add Target (RECEIVED) means the target has received the chat request
         User target = userRepository.findById(request.getTargetUserId())
-                .orElseThrow(() -> new IllegalArgumentException("Target user not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Target user not found with ID: " + request.getTargetUserId()));
         RoomParticipant targetParticipant = new RoomParticipant();
         targetParticipant.setRoom(savedRoom);
         targetParticipant.setUser(target);
@@ -159,6 +163,9 @@ public class RoomService {
         RoomResponse response = new RoomResponse(savedRoom);
         response.setName(target.getName());
         response.setOtherUser(new UserResponse(target));
+        
+        log.info("Successfully created DM request from user {} to user {} in room ID: {}", request.getRequesterId(), request.getTargetUserId(), savedRoom.getId());
+        
         return response;
     }
 
@@ -182,9 +189,9 @@ public class RoomService {
 
     public RoomResponse acceptDM(UUID userId, UUID roomId) {
         RoomParticipant otherParticipant = roomParticipantRepository.findOtherParticipant(roomId, userId, RoomType.DM)
-                .orElseThrow(() -> new IllegalArgumentException("Participant not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Other participant not found in room: " + roomId));
         RoomParticipant selfParticipant = roomParticipantRepository.findByRoomIdAndUserId(roomId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Participant not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Self participant not found in room: " + roomId));
 
         otherParticipant.setStatus(ConnectionStatus.CONNECTED);
         selfParticipant.setStatus(ConnectionStatus.CONNECTED);
@@ -194,14 +201,17 @@ public class RoomService {
         RoomResponse response = new RoomResponse(otherParticipant.getRoom());
         response.setName(otherParticipant.getUser().getName());
         response.setOtherUser(new UserResponse(otherParticipant.getUser()));
+        
+        log.info("Successfully accepted DM request for room ID: {} by user ID: {}", roomId, userId);
+        
         return response;
     }
 
     public RoomResponse rejectDM(UUID userId, UUID roomId) {
         RoomParticipant otherParticipant = roomParticipantRepository.findOtherParticipant(roomId, userId, RoomType.DM)
-                .orElseThrow(() -> new IllegalArgumentException("Participant not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Other participant not found in room: " + roomId));
         RoomParticipant selfParticipant = roomParticipantRepository.findByRoomIdAndUserId(roomId, userId)
-                .orElseThrow(() -> new IllegalArgumentException("Participant not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Self participant not found in room: " + roomId));
 
         otherParticipant.setStatus(ConnectionStatus.NOT_CONNECTED);
         selfParticipant.setStatus(ConnectionStatus.NOT_CONNECTED);
@@ -211,6 +221,9 @@ public class RoomService {
         RoomResponse response = new RoomResponse(otherParticipant.getRoom());
         response.setName(otherParticipant.getUser().getName());
         response.setOtherUser(new UserResponse(otherParticipant.getUser()));
+        
+        log.info("Successfully rejected DM request for room ID: {} by user ID: {}", roomId, userId);
+        
         return response;
     }
 
@@ -223,7 +236,7 @@ public class RoomService {
     @Transactional
     public void deleteRoom(UUID roomId, UUID userId) {
         Room room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found with ID: " + roomId));
 
         if (room.getType() == RoomType.DM) {
             roomParticipantRepository.deleteByRoomId(roomId);
@@ -231,5 +244,7 @@ public class RoomService {
         } else {
             roomParticipantRepository.deleteByRoomIdAndUserId(roomId, userId);
         }
+        
+        log.info("Successfully processed delete/leave action for room ID: {} by user ID: {}", roomId, userId);
     }
 }

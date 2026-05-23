@@ -21,7 +21,9 @@ import com.flyte.backend.repository.RoomRepository;
 import com.flyte.backend.repository.UserRepository;
 import com.flyte.backend.util.SlotGenerator;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class JourneyService {
 
@@ -49,7 +51,7 @@ public class JourneyService {
         public Journey createJourney(CreateJourneyRequest request) {
                 // 1. Validate User
                 User user = userRepository.findById(request.getUserId())
-                                .orElseThrow(() -> new RuntimeException("User not found: " + request.getUserId()));
+                                .orElseThrow(() -> new com.flyte.backend.exception.ResourceNotFoundException("User not found: " + request.getUserId()));
 
                 // 2. Prepare Slots
                 SlotGenerator sourceSlotObj = new SlotGenerator(request.getDepartureTime(), this.totalSlots);
@@ -83,7 +85,7 @@ public class JourneyService {
                 addUserToRoom(user, savedJourney.getFlightRoom());
                 addUserToRoom(user, savedJourney.getSourceRoom());
                 addUserToRoom(user, savedJourney.getDestinationRoom());
-
+                log.info("Successfully created journey with ID: {}", savedJourney.getId());    
                 return savedJourney;
         }
 

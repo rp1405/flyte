@@ -20,7 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class MessageService {
 
@@ -65,6 +67,7 @@ public class MessageService {
         Message savedMessage = messageRepository.save(message);
         room.setLastMessageTimestamp(savedMessage.getCreatedAt());
         roomRepository.save(room);
+        log.info("Successfully created message in room: {}", room.getId());
         return savedMessage;
     }
 

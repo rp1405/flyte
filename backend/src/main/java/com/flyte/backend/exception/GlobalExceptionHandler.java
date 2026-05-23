@@ -13,10 +13,13 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * A global exception handler to process and format errors across the entire application.
  * Using @RestControllerAdvice makes this class a central point for handling exceptions.
  */
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -66,5 +69,32 @@ public class GlobalExceptionHandler {
             error.put("error", "There was a database conflict.");
         }
         return new ResponseEntity<>(error, HttpStatus.CONFLICT); // HTTP 409 Conflict
+    }
+
+    // 1. User made a mistake (400)
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleBadInput(IllegalArgumentException ex) {
+        log.warn("Bad request: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", ex.getMessage()
+        ));
+    }
+
+    // 2. Resource is missing (404)
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleMissing(ResourceNotFoundException ex) {
+        log.warn("Resource not found: {}", ex.getMessage());
+        return new ResponseEntity<>(Map.of("error", ex.getMessage()), HttpStatus.NOT_FOUND);
+    }
+
+    // 3. CATCH-ALL for unexpected crashes (500)
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleEverythingElse(Exception ex) {
+        StackTraceElement origin = ex.getStackTrace()[0];
+        log.error("Unhandled server crash in {} at line {} - Message: {}", 
+                  origin.getMethodName(), origin.getLineNumber(), ex.getMessage(), ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                             .body(Map.of("error", "Internal Server Error"));
     }
 }

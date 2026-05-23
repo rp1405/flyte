@@ -12,10 +12,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import lombok.extern.slf4j.Slf4j;
 import java.util.Collections;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -37,9 +38,9 @@ public class AuthController {
         String idTokenString = payload.get("idToken");
 
         try {
-            System.out.println("Token: " + idTokenString);
             // 1. Verify the Google Token
             // This ensures the token was issued by Google and is for YOUR app
+            log.info("Received request to login with Google with token: {}", idTokenString);
             GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(),
                     new GsonFactory())
                     .setAudience(Collections.singletonList(googleClientId))
@@ -56,7 +57,6 @@ public class AuthController {
             String email = googlePayload.getEmail();
             String name = (String) googlePayload.get("name");
             String pictureUrl = (String) googlePayload.get("picture");
-            System.out.println("Name: " + name);
 
             // 3. Create or Update User in your DB (Logic from your Service)
             UserRequest userRequest = new UserRequest();
@@ -70,6 +70,7 @@ public class AuthController {
             String appToken = tokenProvider.generateToken(userResponse.getId().toString());
 
             // 5. Return the response (Token + User Info)
+            log.info("Successfully logged in user with ID: {}", userResponse.getId());
             return ResponseEntity.ok(Map.of(
                     "token", appToken,
                     "user", userResponse));

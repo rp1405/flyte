@@ -8,10 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/config")
 public class ConfigController {
@@ -23,26 +24,23 @@ public class ConfigController {
     }
 
     @GetMapping("/airports")
-    public ResponseEntity<List<Airport>> getAirports() {
-        try {
-            // Read the JSON file from src/main/resources
-            ClassPathResource resource = new ClassPathResource("airports.json");
-            
-            // Convert JSON file directly into a List of Airport objects
-            List<Airport> airports = objectMapper.readValue(
-                resource.getInputStream(), 
-                new TypeReference<List<Airport>>() {}
-            );
+    public ResponseEntity<List<Airport>> getAirports() throws IOException {
+        // Read the JSON file from src/main/resources
+        log.info("Fetching airports from JSON file");  
+        ClassPathResource resource = new ClassPathResource("airports.json");
+        
+        // Convert JSON file directly into a List of Airport objects
+        List<Airport> airports = objectMapper.readValue(
+            resource.getInputStream(), 
+            new TypeReference<List<Airport>>() {}
+        );
 
-            return ResponseEntity.ok(airports);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().build();
-        }
+        return ResponseEntity.ok(airports);
     }
 
     @GetMapping("/app")
     public ResponseEntity<AppConfigResponse> getAppConfig() {
+        log.info("Fetching app config from JSON file");
         AppConfigResponse config = new AppConfigResponse(
             "Welcome to Flyte Support! If you need any assistance, please contact us at support@flyte-app.com. Our team is available 24/7 to help you with your travel needs and connection requests.",
             "Your privacy is our top priority. We collect only the minimal data necessary to provide our services. Your personal information, location data, and chat messages are securely stored and never sold to third parties."

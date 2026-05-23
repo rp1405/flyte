@@ -13,9 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/rooms")
 public class RoomController {
@@ -28,34 +31,35 @@ public class RoomController {
 
     @PostMapping("/create")
     public ResponseEntity<RoomResponse> createRoom(@Valid @RequestBody RoomRequest roomRequest) {
+        log.info("Received request to create room: {}", roomRequest.getName());
         RoomResponse response = roomService.createRoom(roomRequest);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/getRoomById")
     public ResponseEntity<RoomResponse> getRoom(@RequestParam UUID id) {
+        log.info("Received request to get room with ID: {}", id);
         RoomResponse response = roomService.getRoomById(id);
-        if (response != null) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/getRoomsAndMessagesByUserId")
     public ResponseEntity<List<RoomWithMessages>> getRoomsAndMessagesByUserId(@RequestParam UUID userId) {
+        log.info("Fetching rooms and messages for user ID: {}", userId);
         List<RoomWithMessages> response = roomService.getRoomsAndMessagesByUserId(userId);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/getParticipantsInRoom")
     public ResponseEntity<List<User>> getParticipantsInRoom(@RequestParam UUID roomId) {
+        log.info("Fetching participants for room ID: {}", roomId);
         List<User> participants = roomService.getParticipantsInRoom(roomId);
         return ResponseEntity.ok(participants);
     }
 
     @DeleteMapping("/delete/{roomId}/{userId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable UUID roomId, @PathVariable UUID userId) {
+        log.info("Received request from user ID {} to delete room ID {}", userId, roomId);
         roomService.deleteRoom(roomId, userId);
         return ResponseEntity.ok().build();
     }

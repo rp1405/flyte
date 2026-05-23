@@ -6,10 +6,14 @@ import com.flyte.backend.repository.UserDeviceTokenRepository;
 import com.flyte.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
+import com.flyte.backend.exception.ResourceNotFoundException;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {
@@ -24,38 +28,36 @@ public class NotificationController {
 
     @PostMapping("/register-token")
     public ResponseEntity<?> registerToken(@RequestBody Map<String, String> request) {
+        log.info("Received request to register token with request: {}", request);
         String token = request.get("token");
         String userIdStr = request.get("userId");
 
         if (userIdStr == null || token == null) {
-            return ResponseEntity.badRequest().body("userId and token are required");
+            throw new IllegalArgumentException("userId and token are required");
         }
 
         UUID userId = UUID.fromString(userIdStr);
         User user = userService.findById(userId);
         if (user == null) {
-            return ResponseEntity.badRequest().body("User not found");
+            throw new ResourceNotFoundException("User not found with ID: " + userId);
         }
 
-        try {
-            // Check if token already exists
-            UserDeviceToken existingToken = userDeviceTokenRepository.findByFcmToken(token);
-            
-            if (existingToken != null) {
-                // Update existing token with current user
-                existingToken.setUser(user);
-                userDeviceTokenRepository.save(existingToken);
-            } else {
-                // Create new token entry
-                UserDeviceToken deviceToken = new UserDeviceToken();
-                deviceToken.setUser(user);
-                deviceToken.setFcmToken(token);
-                userDeviceTokenRepository.save(deviceToken);
-            }
-            
-            return ResponseEntity.ok("Token registered successfully");
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body("Failed to register token: " + e.getMessage());
+        // Check if token already exists
+        UserDeviceToken existingToken = userDeviceTokenRepository.findByFcmToken(token);
+        
+        if (existingToken != null) {
+            // Update existing token with current user
+            existingToken.setUser(user);
+            userDeviceTokenRepository.save(existingToken);
+        } else {
+            // Create new token entry
+            UserDeviceToken deviceToken = new UserDeviceToken();
+            deviceToken.setUser(user);
+            deviceToken.setFcmToken(token);
+            userDeviceTokenRepository.save(deviceToken);
         }
+        
+        log.info("Successfully registered FCM token for user: {}", userId);
+        return ResponseEntity.ok("Token registered successfully");
     }
 }
