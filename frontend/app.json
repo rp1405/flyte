@@ -30,6 +30,10 @@
       "favicon": "./assets/images/favicon.png",
       "bundler": "metro"
     },
+    "notification": {
+      "icon": "./assets/images/notification-icon.png",
+      "color": "#2563eb"
+    },
     "plugins": [
       [
         "expo-splash-screen",
