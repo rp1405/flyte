@@ -4,11 +4,15 @@ import com.flyte.backend.DTO.User.UserRequest;
 import com.flyte.backend.DTO.User.UserResponse;
 import com.flyte.backend.model.User;
 import com.flyte.backend.repository.UserRepository;
+import com.flyte.backend.exception.ResourceNotFoundException;
+
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.transaction.Transactional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class UserService {
 
@@ -45,13 +49,14 @@ public class UserService {
                 });
 
         syncService.resetSyncTime(user.getId());
+        log.info("Successfully found or created user with ID: {}", user.getId());
         return new UserResponse(user);
     }
 
     public UserResponse getUserById(UUID id) {
         return userRepository.findById(id)
                 .map(UserResponse::new)
-                .orElse(null);
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + id));
     }
 
     public User findByEmail(String email) {
@@ -83,10 +88,13 @@ public class UserService {
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID: " + userId));
 
         user.setNickname(nickname);
         User updatedUser = userRepository.save(user);
+        
+        log.info("Successfully updated nickname for user {} to '{}'", userId, nickname);
+        
         return new UserResponse(updatedUser);
     }
 

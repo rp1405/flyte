@@ -20,6 +20,18 @@ export const useGlobalWebSocketListener = () => {
           await database.write(async () => {
             const messagesCollection = database.get<Message>(Message.table);
             const roomsCollection = database.get<Room>("rooms");
+            
+            // Check if message already exists
+            try {
+              const existingMessage = await messagesCollection.find(event.payload.id);
+              if (existingMessage) {
+                console.log(`Message ${event.payload.id} already exists, skipping.`);
+                return;
+              }
+            } catch (e) {
+              // Message not found, proceed to create
+            }
+
             await messagesCollection.create((m) => {
               m._raw.id = event.payload.id;
               m.text = event.payload.messageText;

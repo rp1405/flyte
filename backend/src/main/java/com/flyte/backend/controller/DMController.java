@@ -7,11 +7,12 @@ import com.flyte.backend.enums.ConnectionStatus;
 
 import java.util.List;
 import java.util.UUID;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/dm")
 public class DMController {

@@ -159,6 +159,17 @@ const ChatDetailScreen = ({ room, messages, route }: ChatDetailProps) => {
       const messagesCollection = database.get<Message>("messages");
       const roomsCollection = database.get<Room>("rooms");
 
+      // Check if message already exists
+      try {
+        const existingMessage = await messagesCollection.find(backendMsg.id);
+        if (existingMessage) {
+          console.log(`Message ${backendMsg.id} already exists, skipping.`);
+          return;
+        }
+      } catch (e) {
+        // Message not found, proceed to create
+      }
+
       await messagesCollection.create((m) => {
         m._raw.id = backendMsg.id;
         m.text = backendMsg.messageText;

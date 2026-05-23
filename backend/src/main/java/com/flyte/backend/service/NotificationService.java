@@ -13,7 +13,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class NotificationService {
 
@@ -69,6 +71,7 @@ public class NotificationService {
                         );
                     }
                 });
+                log.info("Successfully notified all users in room: {} about chat notification", roomId);  
     }
 
     @Async
@@ -96,5 +99,6 @@ public class NotificationService {
                 data
             );
         }
-    }
+        log.info("Successfully notified target user: {} about friend request", targetUserId);  
+    }   
 }

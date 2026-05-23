@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class SyncService {
 
@@ -98,6 +100,7 @@ public class SyncService {
         // 5. Update sync time
         syncTimeObj.setSyncTime(now);
         syncTimeRepository.save(syncTimeObj);
+        log.info("Successfully synced data for user: {}", userId);
 
         return response;
     }
@@ -113,5 +116,7 @@ public class SyncService {
                 });
         syncTimeObj.setSyncTime(Instant.EPOCH);
         syncTimeRepository.save(syncTimeObj);
+        log.info("Successfully reset sync time for user: ", userId);
+
     }
 }

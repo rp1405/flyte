@@ -12,6 +12,9 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -26,20 +29,16 @@ public class UserController {
     // In a real OAuth flow, this logic would be in a success handler.
     @PostMapping("/findOrCreate")
     public ResponseEntity<UserResponse> findOrCreateUser(@Valid @RequestBody UserRequest userRequest) {
-
+        log.info("Received request to find or create user with email: {}", userRequest.getEmail());
         UserResponse response = userService.findOrCreateUser(userRequest);
         return ResponseEntity.ok(response);
-
     }
 
     @GetMapping("/getUserbyId")
     public ResponseEntity<UserResponse> getUser(@RequestParam UUID id) {
+        log.info("Received request to get user with ID: {}", id);
         UserResponse response = userService.getUserById(id);
-        if (response != null) {
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(response);
     }
 
     // Endpoint to check if a nickname is available
@@ -47,6 +46,7 @@ public class UserController {
     public ResponseEntity<Map<String, Boolean>> checkNicknameAvailability(
             @Valid @RequestBody Map<String, String> request) {
         String nickname = request.get("nickname");
+        log.info("Checking availability for nickname: {}", nickname);
         boolean available = userService.isNicknameAvailable(nickname);
         return ResponseEntity.ok(Map.of("available", available));
     }
@@ -57,19 +57,13 @@ public class UserController {
             @RequestParam UUID userId,
             @Valid @RequestBody Map<String, String> request) {
         String nickname = request.get("nickname");
-
-        try {
-            UserResponse response = userService.setUserNickname(userId, nickname);
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "user", response
-            ));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "error", e.getMessage()
-            ));
-        }
+        log.info("Received request to set nickname for user {}: {}", userId, nickname);
+        
+        UserResponse response = userService.setUserNickname(userId, nickname);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "user", response
+        ));
     }
 
 }

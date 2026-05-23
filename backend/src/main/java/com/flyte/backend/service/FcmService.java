@@ -4,7 +4,9 @@ import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
 import org.springframework.stereotype.Service;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 public class FcmService {
 
@@ -28,5 +30,6 @@ public class FcmService {
         } catch (Exception e) {
             System.err.println("Error sending FCM message: " + e.getMessage());
         }
+        log.info("Successfully sent FCM message to token: {}", token);  
     }
 }

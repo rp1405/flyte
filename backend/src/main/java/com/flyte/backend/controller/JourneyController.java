@@ -14,10 +14,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
 import java.util.UUID;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/journeys")
 public class JourneyController {
@@ -29,9 +30,8 @@ public class JourneyController {
 
     @PostMapping("/create")
     public Journey createJourney(@Valid @RequestBody CreateJourneyRequest journeyRequest) {
-
+        log.info("Received request to create journey with request: {}", journeyRequest);
         return journeyService.createJourney(journeyRequest);
-
     }
 
     @GetMapping("/getJouney")
