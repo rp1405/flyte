@@ -1,25 +1,25 @@
+
 import "@react-native-firebase/app";
+import messaging from "@react-native-firebase/messaging";
 import {
   createNativeStackNavigator,
   NativeStackNavigationProp,
 } from "@react-navigation/native-stack";
-import { registerRootComponent } from "expo";
 import React, { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import { AppColors } from "./constants/colors";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ConfigProvider } from "./context/ConfigContext";
 import { database as localDb } from "./db";
 import "./global.css";
+import { usePushNotifications } from "./hooks/usePushNotifications";
 import ChatDetailScreen from "./screens/ChatDetailScreen";
 import LoginScreen from "./screens/LoginScreen";
 import NicknameSetupScreen from "./screens/NicknameSetupScreen";
 import TabNavigator from "./screens/TabNavigator";
 import { SyncService } from "./services/SyncService";
-import messaging from "@react-native-firebase/messaging";
-import { usePushNotifications } from "./hooks/usePushNotifications";
-import Toast from "react-native-toast-message";
 
 // Register background handler early in the app lifecycle
 messaging().setBackgroundMessageHandler(async (remoteMessage) => {
@@ -126,9 +126,9 @@ function AppNavigator() {
 }
 
 // --- 2. ROOT COMPONENT ---
-import { ToastConfig } from "react-native-toast-message";
-import { Image, TouchableOpacity, Text } from "react-native";
+import { Image, Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ToastConfig } from "react-native-toast-message";
 
 // Custom Toast Component Wrapper
 const CustomToast = () => {
@@ -221,4 +221,4 @@ function App() {
 }
 
 export default App;
-registerRootComponent(App);
+// registerRootComponent(App);
