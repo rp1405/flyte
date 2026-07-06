@@ -40,6 +40,10 @@ The platform is designed with a modern, high-throughput distributed architecture
 
 ---
 
+**APP DOWNLOAD LINK:** https://drive.google.com/file/d/1MUTGg9iJ2NnOqhR1c1LNfQai7MS1rKeJ/view?usp=sharing
+
+---
+
 ## 🏁 **Getting Started**
 
 ### 📋 **Prerequisites**
